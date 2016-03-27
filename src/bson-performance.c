@@ -60,6 +60,40 @@ bson_perf_setup (perf_test_t *test)
 }
 
 
+static bool
+_visit_document (const bson_iter_t *iter,
+                 const char        *key,
+                 const bson_t      *v_document,
+                 void              *data);
+
+
+static const bson_visitor_t visitors = {
+   NULL, /* visit_before */
+   NULL, /* visit_after */
+   NULL, /* visit_corrupt */
+   NULL, /* visit_double */
+   NULL, /* visit_utf8 */
+   _visit_document,
+   _visit_document, /* use same function for visit_array */
+};
+
+
+
+static bool
+_visit_document (const bson_iter_t *iter,
+                 const char        *key,
+                 const bson_t      *v_document,
+                 void              *data)
+{
+   bson_iter_t child;
+
+   assert (bson_iter_init (&child, v_document));
+   bson_iter_visit_all (&child, &visitors, NULL);
+
+   return false; /* continue */
+}
+
+
 static void
 bson_perf_task (perf_test_t *test)
 {
@@ -70,12 +104,10 @@ bson_perf_task (perf_test_t *test)
    bson_test = (bson_perf_test_t *) test->context;
 
    for (i = 0; i < NUM_DOCS; i++) {
-      /* Other drivers test "encoding" some data structure to BSON.
-       * libbson has no analog, so just iterate the document. */
+      /* Other drivers test "encoding" some data structure to BSON. libbson has
+       * no analog; just visit all elements recursively. */
       bson_iter_init (&iter, &bson_test->bson);
-      while (bson_iter_next (&iter)) {
-         bson_iter_value (&iter);
-      }
+      bson_iter_visit_all (&iter, &visitors, NULL);
    }
 }
 
@@ -98,10 +130,15 @@ bson_perf_teardown (perf_test_t *test)
 void
 bson_perf (void)
 {
+   /* other drivers' idea of encoding vs decoding doesn't apply to libbson */
    perf_test_t tests[] = {
       BSON_TEST (TestFlatEncoding, flat_bson),
       BSON_TEST (TestDeepEncoding, deep_bson),
       BSON_TEST (TestFullEncoding, full_bson),
+
+      BSON_TEST (TestFlatDecoding, flat_bson),
+      BSON_TEST (TestDeepDecoding, deep_bson),
+      BSON_TEST (TestFullDecoding, full_bson),
       { 0 },
    };
 
