@@ -1,0 +1,12 @@
+*.o
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.so
+*.so.*
+*.dylib
+*.exe
+mongo-c-performance
+performance-testdata/*
