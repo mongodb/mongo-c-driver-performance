@@ -119,6 +119,7 @@ bson_perf_teardown (perf_test_t *test)
 
    bson_test = (bson_perf_test_t *) test->context;
    bson_destroy (&bson_test->bson);
+   bson_free (bson_test);
 }
 
 
