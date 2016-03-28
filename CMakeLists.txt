@@ -25,6 +25,7 @@ set(SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/src/main.c
     ${CMAKE_SOURCE_DIR}/src/mongo-c-performance.h
     ${CMAKE_SOURCE_DIR}/src/mongo-c-performance.c
+    ${CMAKE_SOURCE_DIR}/src/single-doc-performance.c
 )
 
 add_executable(mongo-c-performance ${SOURCE_FILES})

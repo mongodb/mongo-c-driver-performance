@@ -20,7 +20,8 @@
 #include <bson.h>
 #include <mongoc.h>
 
-extern void bson_perf (void);
+extern void bson_perf         (void);
+extern void single_doc_perf   (void);
 
 int
 main (int    argc,
@@ -31,6 +32,7 @@ main (int    argc,
    parse_args (argc, argv);
 
    bson_perf ();
+   single_doc_perf ();
 
    mongoc_cleanup ();
 }
