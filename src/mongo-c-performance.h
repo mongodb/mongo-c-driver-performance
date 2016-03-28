@@ -36,6 +36,7 @@ struct _perf_test_t {
    void             *context;
 };
 
+void parse_args     (int argc, char **argv);
 void run_perf_tests (perf_test_t *tests);
 
 #endif //MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H

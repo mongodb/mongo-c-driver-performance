@@ -22,6 +22,18 @@
 const int NUM_ITERATIONS        = 100;
 const int NUM_DOCS            = 10000;
 
+static int    g_num_tests;
+static char **g_test_names;
+
+
+void
+parse_args (int    argc,
+            char **argv)
+{
+   g_num_tests = argc - 1;
+   g_test_names = g_num_tests ? &argv[1] : NULL;
+}
+
 
 /* from "man qsort" */
 static int
@@ -34,6 +46,26 @@ cmp (const void *a,
    if (arg1 < arg2) return -1;
    if (arg1 > arg2) return 1;
    return 0;
+}
+
+
+bool
+should_run_test (const char *name)
+{
+   int i;
+
+   if (!g_test_names) {
+      /* run all tests */
+      return true;
+   }
+
+   for (i = 0; i < g_num_tests; i++) {
+      if (!strcmp (g_test_names[i], name)) {
+         return true;
+      }
+   }
+
+   return false;
 }
 
 
@@ -50,31 +82,33 @@ run_perf_tests (perf_test_t *tests)
    results = bson_malloc (NUM_ITERATIONS * sizeof (int64_t));
 
    while (test->name) {
-      if (test->setup) {
-         test->setup (test);
-      }
-
-      for (i = 0; i < NUM_ITERATIONS; i++) {
-         if (test->before) {
-            test->before (test);
+      if (should_run_test (test->name)) {
+         if (test->setup) {
+            test->setup (test);
          }
 
-         start = bson_get_monotonic_time ();
-         test->task (test);
-         results[i] = bson_get_monotonic_time () - start;
+         for (i = 0; i < NUM_ITERATIONS; i++) {
+            if (test->before) {
+               test->before (test);
+            }
 
-         if (test->after) {
-            test->after (test);
+            start = bson_get_monotonic_time ();
+            test->task (test);
+            results[i] = bson_get_monotonic_time () - start;
+
+            if (test->after) {
+               test->after (test);
+            }
          }
-      }
 
-      if (test->teardown) {
-         test->teardown (test);
-      }
+         if (test->teardown) {
+            test->teardown (test);
+         }
 
-      qsort ((void *) results, NUM_ITERATIONS, sizeof (int64_t), cmp);
-      median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e6;
-      printf ("%s, %f\n", test->name, median);
+         qsort ((void *) results, NUM_ITERATIONS, sizeof (int64_t), cmp);
+         median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e6;
+         printf ("%20s, %f\n", test->name, median);
+      }
 
       test++;
    }

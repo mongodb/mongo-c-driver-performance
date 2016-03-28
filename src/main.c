@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "mongo-c-performance.h"
+
 #include <stdio.h>
 #include <bson.h>
 #include <mongoc.h>
@@ -21,9 +23,12 @@
 extern void bson_perf (void);
 
 int
-main ()
+main (int    argc,
+      char **argv)
 {
    mongoc_init ();
+
+   parse_args (argc, argv);
 
    bson_perf ();
 
