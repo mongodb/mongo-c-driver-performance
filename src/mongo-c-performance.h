@@ -18,7 +18,6 @@
 #define MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 
 const int NUM_ITERATIONS;
-const int MAX_ITERATION_TIME;
 const int NUM_DOCS;
 
 typedef struct _perf_test_t perf_test_t;
