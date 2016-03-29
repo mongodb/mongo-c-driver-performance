@@ -96,7 +96,7 @@ find_one_setup (perf_test_t *test)
    context = (find_one_test_t *) test->context;
    context->client = mongoc_client_new (NULL);
    context->collection = mongoc_client_get_collection (context->client,
-                                                        "perftest", "corpus");
+                                                       "perftest", "corpus");
    context->oids = bson_malloc0 (sizeof (bson_oid_t) * NUM_DOCS);
 
    read_json_file (test->data_path, &tweet);
