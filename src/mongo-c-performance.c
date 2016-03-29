@@ -21,7 +21,7 @@
 
 
 const int NUM_ITERATIONS        = 100;
-const int NUM_DOCS            = 10000;
+const int NUM_DOCS            = 10;
 
 static int    g_num_tests;
 static char **g_test_names;
@@ -141,8 +141,8 @@ run_perf_tests (perf_test_t *tests)
          }
 
          qsort ((void *) results, NUM_ITERATIONS, sizeof (int64_t), cmp);
-         median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e6;
-         printf ("%20s, %f\n", test->name, median);
+         median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e3;
+         printf ("%25s, %f\n", test->name, median);
 
          bson_free (test->context);
       }
