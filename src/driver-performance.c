@@ -178,22 +178,23 @@ find_one_teardown (perf_test_t *test)
 }
 
 
+/* a "base" struct for tests that load one document from JSON */
 typedef struct
 {
    mongoc_client_t     *client;
    mongoc_collection_t *collection;
    bson_t               doc;
-} small_doc_test_t;
+} single_doc_test_t;
 
 
 static void
-small_doc_setup (perf_test_t *test)
+single_doc_setup (perf_test_t *test)
 {
-   small_doc_test_t *context;
+   single_doc_test_t *context;
    bson_t empty = BSON_INITIALIZER;
    bson_error_t error;
 
-   context = (small_doc_test_t *) test->context;
+   context = (single_doc_test_t *) test->context;
    context->client = mongoc_client_new (NULL);
    context->collection = mongoc_client_get_collection (context->client,
                                                        "perftest", "corpus");
@@ -210,17 +211,29 @@ small_doc_setup (perf_test_t *test)
 
 
 static void
+single_doc_teardown (perf_test_t *test)
+{
+   single_doc_test_t *context;
+
+   context = (single_doc_test_t *) test->context;
+   mongoc_collection_destroy (context->collection);
+   mongoc_client_destroy (context->client);
+   bson_destroy (&context->doc);
+}
+
+
+static void
 small_doc_task (perf_test_t *test)
 {
-   small_doc_test_t *context;
+   single_doc_test_t *base;
    bson_error_t error;
    int i;
 
-   context = (small_doc_test_t *) test->context;
+   base = (single_doc_test_t *) test->context;
 
    for (i = 0; i < NUM_DOCS; i++) {
-      if (!mongoc_collection_insert (context->collection, MONGOC_INSERT_NONE,
-                                &context->doc, NULL, &error)) {
+      if (!mongoc_collection_insert (base->collection, MONGOC_INSERT_NONE,
+                                     &base->doc, NULL, &error)) {
          MONGOC_ERROR ("insert: %s\n", error.message);
          abort ();
       }
@@ -229,59 +242,13 @@ small_doc_task (perf_test_t *test)
 
 
 static void
-small_doc_teardown (perf_test_t *test)
-{
-   small_doc_test_t *context;
-
-   context = (small_doc_test_t *) test->context;
-   mongoc_collection_destroy (context->collection);
-   mongoc_client_destroy (context->client);
-   bson_destroy (&context->doc);
-}
-
-
-
-
-typedef struct
-{
-   mongoc_client_t     *client;
-   mongoc_collection_t *collection;
-   bson_t               doc;
-} large_doc_test_t;
-
-
-static void
-large_doc_setup (perf_test_t *test)
-{
-   large_doc_test_t *context;
-   bson_t empty = BSON_INITIALIZER;
-   bson_error_t error;
-
-   context = (large_doc_test_t *) test->context;
-   context->client = mongoc_client_new (NULL);
-   context->collection = mongoc_client_get_collection (context->client,
-                                                       "perftest", "corpus");
-
-   read_json_file (test->data_path, &context->doc);
-
-   bson_init (&empty);
-
-   if (!mongoc_collection_remove (context->collection, MONGOC_REMOVE_NONE,
-                                  &empty, NULL, &error)) {
-      MONGOC_ERROR ("collection_remove: %s\n", error.message);
-      abort ();
-   }
-}
-
-
-static void
 large_doc_task (perf_test_t *test)
 {
-   large_doc_test_t *context;
+   single_doc_test_t *context;
    bson_error_t error;
    int i;
 
-   context = (large_doc_test_t *) test->context;
+   context = (single_doc_test_t *) test->context;
 
    for (i = 0; i < 10; i++) {
       if (!mongoc_collection_insert (context->collection, MONGOC_INSERT_NONE,
@@ -293,29 +260,25 @@ large_doc_task (perf_test_t *test)
 }
 
 
-static void
-large_doc_teardown (perf_test_t *test)
-{
-   large_doc_test_t *context;
+#define DRIVER_TEST(prefix, name) \
+   { sizeof (prefix ## _test_t), #name, NULL, \
+     prefix ## _setup, NULL, prefix ## _task, NULL, prefix ## _teardown }
 
-   context = (large_doc_test_t *) test->context;
-   mongoc_collection_destroy (context->collection);
-   mongoc_client_destroy (context->client);
-   bson_destroy (&context->doc);
-}
-
+#define INSERT_DOC_TEST(prefix, name, filename) \
+   { sizeof (single_doc_test_t), #name, "SINGLE_DOCUMENT/" #filename ".json", \
+     prefix ## _setup, NULL, prefix ## _task, NULL, prefix ## _teardown }
 
 #define SINGLE_DOC_TEST(prefix, name, filename) \
-   { sizeof (prefix ## _test_t), #name, "SINGLE_DOCUMENT/" #filename ".json", \
-     prefix ## _setup, NULL, prefix ## _task, NULL, prefix ## _teardown }
+   { sizeof (single_doc_test_t), #name, "SINGLE_DOCUMENT/" #filename ".json", \
+     single_doc_setup, NULL, prefix ## _task, NULL, single_doc_teardown }
 
 
 void
 single_doc_perf (void)
 {
    perf_test_t tests[] = {
-      SINGLE_DOC_TEST (run_cmd, TestRunCommand, NULL),
-      SINGLE_DOC_TEST (find_one, TestFindOneByID, TWEET),
+      DRIVER_TEST (run_cmd, TestRunCommand),
+      INSERT_DOC_TEST (find_one, TestFindOneByID, TWEET),
       SINGLE_DOC_TEST (small_doc, TestSmallDocInsertOne, SMALL_DOC),
       SINGLE_DOC_TEST (large_doc, TestLargeDocInsertOne, LARGE_DOC),
       { 0 },
