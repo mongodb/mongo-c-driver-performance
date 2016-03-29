@@ -27,36 +27,10 @@ typedef struct {
 static void
 bson_perf_setup (perf_test_t *test)
 {
-   char *path;
-   bson_perf_test_t *bson_test;
-   bson_json_reader_t *reader;
-   bson_error_t error;
-   int r;
+   bson_perf_test_t *context;
 
-   test->context = bson_malloc0 (sizeof (bson_perf_test_t));
-   bson_test = (bson_perf_test_t *) test->context;
-   bson_init (&bson_test->bson);
-
-   path = bson_strdup_printf ("performance-testdata/%s", test->data_path);
-   reader = bson_json_reader_new_from_file (path, &error);
-   if (!reader) {
-      MONGOC_ERROR ("%s: %s\n", path, error.message);
-      abort ();
-   }
-
-   r = bson_json_reader_read (reader, &bson_test->bson, &error);
-   if (r < 0) {
-      MONGOC_ERROR ("%s: %s\n", test->data_path, error.message);
-      abort ();
-   }
-
-   if (r == 0) {
-      MONGOC_ERROR ("%s: no data\n", test->data_path);
-      abort ();
-   }
-
-   bson_json_reader_destroy (reader);
-   bson_free (path);
+   context = (bson_perf_test_t *) test->context;
+   read_json_file (test->data_path, &context->bson);
 }
 
 
@@ -97,16 +71,16 @@ _visit_document (const bson_iter_t *iter,
 static void
 bson_perf_task (perf_test_t *test)
 {
-   bson_perf_test_t *bson_test;
+   bson_perf_test_t *context;
    bson_iter_t iter;
    int i;
 
-   bson_test = (bson_perf_test_t *) test->context;
+   context = (bson_perf_test_t *) test->context;
 
    for (i = 0; i < NUM_DOCS; i++) {
       /* Other drivers test "encoding" some data structure to BSON. libbson has
        * no analog; just visit all elements recursively. */
-      bson_iter_init (&iter, &bson_test->bson);
+      bson_iter_init (&iter, &context->bson);
       bson_iter_visit_all (&iter, &visitors, NULL);
    }
 }
@@ -115,16 +89,15 @@ bson_perf_task (perf_test_t *test)
 static void
 bson_perf_teardown (perf_test_t *test)
 {
-   bson_perf_test_t *bson_test;
+   bson_perf_test_t *context;
 
-   bson_test = (bson_perf_test_t *) test->context;
-   bson_destroy (&bson_test->bson);
-   bson_free (bson_test);
+   context = (bson_perf_test_t *) test->context;
+   bson_destroy (&context->bson);
 }
 
 
 #define BSON_TEST(name, filename) \
-   { #name, "EXTENDED_BSON/" #filename ".json", \
+   { sizeof (bson_perf_test_t), #name, "EXTENDED_BSON/" #filename ".json", \
      bson_perf_setup, NULL, bson_perf_task, NULL, bson_perf_teardown }
 
 

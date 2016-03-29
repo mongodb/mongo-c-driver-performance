@@ -17,6 +17,9 @@
 #ifndef MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 #define MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 
+#include <stddef.h>
+#include <bson.h>
+
 const int NUM_ITERATIONS;
 const int NUM_DOCS;
 
@@ -25,6 +28,7 @@ typedef struct _perf_test_t perf_test_t;
 typedef void (*perf_callback_t)(perf_test_t *test);
 
 struct _perf_test_t {
+   size_t            context_sz;
    const char       *name;
    const char       *data_path;
    perf_callback_t   setup;
@@ -35,7 +39,10 @@ struct _perf_test_t {
    void             *context;
 };
 
-void parse_args     (int argc, char **argv);
-void run_perf_tests (perf_test_t *tests);
+void parse_args     (int            argc,
+                     char         **argv);
+void read_json_file (const char    *data_path,
+                     bson_t        *bson);
+void run_perf_tests (perf_test_t  *tests);
 
 #endif //MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H

@@ -16,6 +16,7 @@
 
 #include "mongo-c-performance.h"
 
+#include <bson.h>
 #include <mongoc.h>
 
 
@@ -35,6 +36,39 @@ parse_args (int    argc,
 }
 
 
+void
+read_json_file (const char *data_path,
+                bson_t     *bson)
+{
+   char *path;
+   bson_json_reader_t *reader;
+   bson_error_t error;
+   int r;
+
+   path = bson_strdup_printf ("performance-testdata/%s", data_path);
+   reader = bson_json_reader_new_from_file (path, &error);
+   if (!reader) {
+      MONGOC_ERROR ("%s: %s\n", path, error.message);
+      abort ();
+   }
+
+   bson_init (bson);
+   r = bson_json_reader_read (reader, bson, &error);
+   if (r < 0) {
+      MONGOC_ERROR ("%s: %s\n", data_path, error.message);
+      abort ();
+   }
+
+   if (r == 0) {
+      MONGOC_ERROR ("%s: no data\n", data_path);
+      abort ();
+   }
+
+   bson_json_reader_destroy (reader);
+   bson_free (path);
+}
+
+
 /* from "man qsort" */
 static int
 cmp (const void *a,
@@ -49,7 +83,7 @@ cmp (const void *a,
 }
 
 
-bool
+static bool
 should_run_test (const char *name)
 {
    int i;
@@ -83,6 +117,7 @@ run_perf_tests (perf_test_t *tests)
 
    while (test->name) {
       if (should_run_test (test->name)) {
+         test->context = bson_malloc0 (test->context_sz);
          if (test->setup) {
             test->setup (test);
          }
@@ -108,6 +143,8 @@ run_perf_tests (perf_test_t *tests)
          qsort ((void *) results, NUM_ITERATIONS, sizeof (int64_t), cmp);
          median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e6;
          printf ("%20s, %f\n", test->name, median);
+
+         bson_free (test->context);
       }
 
       test++;
