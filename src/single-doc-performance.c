@@ -240,6 +240,71 @@ small_doc_teardown (perf_test_t *test)
 }
 
 
+
+
+typedef struct
+{
+   mongoc_client_t     *client;
+   mongoc_collection_t *collection;
+   bson_t               doc;
+} large_doc_test_t;
+
+
+static void
+large_doc_setup (perf_test_t *test)
+{
+   large_doc_test_t *context;
+   bson_t empty = BSON_INITIALIZER;
+   bson_error_t error;
+
+   context = (large_doc_test_t *) test->context;
+   context->client = mongoc_client_new (NULL);
+   context->collection = mongoc_client_get_collection (context->client,
+                                                       "perftest", "corpus");
+
+   read_json_file (test->data_path, &context->doc);
+
+   bson_init (&empty);
+
+   if (!mongoc_collection_remove (context->collection, MONGOC_REMOVE_NONE,
+                                  &empty, NULL, &error)) {
+      MONGOC_ERROR ("collection_remove: %s\n", error.message);
+      abort ();
+   }
+}
+
+
+static void
+large_doc_task (perf_test_t *test)
+{
+   large_doc_test_t *context;
+   bson_error_t error;
+   int i;
+
+   context = (large_doc_test_t *) test->context;
+
+   for (i = 0; i < 10; i++) {
+      if (!mongoc_collection_insert (context->collection, MONGOC_INSERT_NONE,
+                                     &context->doc, NULL, &error)) {
+         MONGOC_ERROR ("insert: %s\n", error.message);
+         abort ();
+      }
+   }
+}
+
+
+static void
+large_doc_teardown (perf_test_t *test)
+{
+   large_doc_test_t *context;
+
+   context = (large_doc_test_t *) test->context;
+   mongoc_collection_destroy (context->collection);
+   mongoc_client_destroy (context->client);
+   bson_destroy (&context->doc);
+}
+
+
 #define SINGLE_DOC_TEST(prefix, name, filename) \
    { sizeof (prefix ## _test_t), #name, "SINGLE_DOCUMENT/" #filename ".json", \
      prefix ## _setup, NULL, prefix ## _task, NULL, prefix ## _teardown }
@@ -252,6 +317,7 @@ single_doc_perf (void)
       SINGLE_DOC_TEST (run_cmd, TestRunCommand, NULL),
       SINGLE_DOC_TEST (find_one, TestFindOneByID, TWEET),
       SINGLE_DOC_TEST (small_doc, TestSmallDocInsertOne, SMALL_DOC),
+      SINGLE_DOC_TEST (large_doc, TestLargeDocInsertOne, LARGE_DOC),
       { 0 },
    };
 
