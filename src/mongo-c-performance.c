@@ -21,7 +21,7 @@
 
 
 const int NUM_ITERATIONS        = 100;
-const int NUM_DOCS            = 10;
+const int NUM_DOCS            = 10000;
 
 static int    g_num_tests;
 static char **g_test_names;
