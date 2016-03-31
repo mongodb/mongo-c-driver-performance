@@ -91,7 +91,6 @@ upload_big_file (gridfs_test_t *context,
    mongoc_gridfs_file_destroy (file);
 }
 
-
 static void
 gridfs_setup (perf_test_t *test)
 {
@@ -120,6 +119,17 @@ gridfs_setup (perf_test_t *test)
    context->data = bson_malloc (context->data_sz);
    assert (context->data);
    assert (context->data_sz == fread (context->data, 1, context->data_sz, fp));
+}
+
+static void
+gridfs_teardown (perf_test_t *test)
+{
+   gridfs_test_t *context;
+
+   context = (gridfs_test_t *) test->context;
+   bson_free (context->data);
+   mongoc_gridfs_destroy (context->gridfs);
+   mongoc_client_destroy (context->client);
 }
 
 typedef gridfs_test_t upload_test_t;
@@ -166,7 +176,7 @@ upload_task (perf_test_t *test)
 }
 
 #define upload_after NULL
-#define upload_teardown NULL
+#define upload_teardown gridfs_teardown
 
 typedef struct {
    gridfs_test_t base;
@@ -227,7 +237,7 @@ download_task (perf_test_t *test)
 }
 
 #define download_after NULL
-#define download_teardown NULL
+#define download_teardown gridfs_teardown
 
 #define GRIDFS_TEST(prefix, name) \
    { sizeof (prefix ## _test_t), #name, NULL, \
