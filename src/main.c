@@ -22,6 +22,7 @@
 
 extern void bson_perf   (void);
 extern void driver_perf (void);
+extern void gridfs_perf (void);
 
 int
 main (int    argc,
@@ -33,6 +34,7 @@ main (int    argc,
 
    bson_perf ();
    driver_perf ();
+   gridfs_perf ();
 
    mongoc_cleanup ();
 }
