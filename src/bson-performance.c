@@ -132,6 +132,7 @@ bson_perf (void)
    perf_test_t *tests[] = {
       bson_perf_new ("TestFlatEncoding", "EXTENDED_BSON/flat_bson.json"),
       bson_perf_new ("TestDeepEncoding", "EXTENDED_BSON/deep_bson.json"),
+      bson_perf_new ("TestFullEncoding", "EXTENDED_BSON/full_bson.json"),
 
       bson_perf_new ("TestFlatDecoding", "EXTENDED_BSON/flat_bson.json"),
       bson_perf_new ("TestDeepDecoding", "EXTENDED_BSON/deep_bson.json"),
