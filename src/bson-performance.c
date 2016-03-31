@@ -20,17 +20,20 @@
 #include <mongoc.h>
 
 typedef struct {
-   bson_t bson;
+   perf_test_t base;
+   bson_t      bson;
 } bson_perf_test_t;
 
 
 static void
 bson_perf_setup (perf_test_t *test)
 {
-   bson_perf_test_t *context;
+   bson_perf_test_t *bson_test;
 
-   context = (bson_perf_test_t *) test->context;
-   read_json_file (test->data_path, &context->bson);
+   perf_test_setup (test);
+
+   bson_test = (bson_perf_test_t *) test;
+   read_json_file (test->data_path, &bson_test->bson);
 }
 
 
@@ -71,16 +74,16 @@ _visit_document (const bson_iter_t *iter,
 static void
 bson_perf_task (perf_test_t *test)
 {
-   bson_perf_test_t *context;
+   bson_perf_test_t *bson_test;
    bson_iter_t iter;
    int i;
 
-   context = (bson_perf_test_t *) test->context;
+   bson_test = (bson_perf_test_t *) test;
 
    for (i = 0; i < NUM_DOCS; i++) {
       /* Other drivers test "encoding" some data structure to BSON. libbson has
        * no analog; just visit all elements recursively. */
-      bson_iter_init (&iter, &context->bson);
+      bson_iter_init (&iter, &bson_test->bson);
       bson_iter_visit_all (&iter, &visitors, NULL);
    }
 }
@@ -89,31 +92,51 @@ bson_perf_task (perf_test_t *test)
 static void
 bson_perf_teardown (perf_test_t *test)
 {
-   bson_perf_test_t *context;
+   bson_perf_test_t *bson_test;
 
-   context = (bson_perf_test_t *) test->context;
-   bson_destroy (&context->bson);
+   bson_test = (bson_perf_test_t *) test;
+   bson_destroy (&bson_test->bson);
+
+   perf_test_teardown (test);
 }
 
 
-#define BSON_TEST(name, filename) \
-   { sizeof (bson_perf_test_t), #name, "EXTENDED_BSON/" #filename ".json", \
-     bson_perf_setup, NULL, bson_perf_task, NULL, bson_perf_teardown }
+static void
+bson_perf_init (bson_perf_test_t *bson_perf_test,
+                const char       *name,
+                const char       *data_path)
+{
+   perf_test_init ((perf_test_t *) bson_perf_test, name, data_path);
+   bson_perf_test->base.setup = bson_perf_setup;
+   bson_perf_test->base.task = bson_perf_task;
+   bson_perf_test->base.teardown = bson_perf_teardown;
+}
+
+static perf_test_t *
+bson_perf_new (const char *name,
+               const char *data_path)
+{
+   bson_perf_test_t *bson_perf_test;
+
+   bson_perf_test = bson_malloc0 (sizeof (bson_perf_test_t));
+   bson_perf_init (bson_perf_test, name, data_path);
+
+   return (perf_test_t *) bson_perf_test;
+}
 
 
 void
 bson_perf (void)
 {
    /* other drivers' idea of encoding vs decoding doesn't apply to libbson */
-   perf_test_t tests[] = {
-      BSON_TEST (TestFlatEncoding, flat_bson),
-      BSON_TEST (TestDeepEncoding, deep_bson),
-      BSON_TEST (TestFullEncoding, full_bson),
+   perf_test_t *tests[] = {
+      bson_perf_new ("TestFlatEncoding", "EXTENDED_BSON/flat_bson.json"),
+      bson_perf_new ("TestDeepEncoding", "EXTENDED_BSON/deep_bson.json"),
 
-      BSON_TEST (TestFlatDecoding, flat_bson),
-      BSON_TEST (TestDeepDecoding, deep_bson),
-      BSON_TEST (TestFullDecoding, full_bson),
-      { 0 },
+      bson_perf_new ("TestFlatDecoding", "EXTENDED_BSON/flat_bson.json"),
+      bson_perf_new ("TestDeepDecoding", "EXTENDED_BSON/deep_bson.json"),
+      bson_perf_new ("TestFullDecoding", "EXTENDED_BSON/full_bson.json"),
+      NULL,
    };
 
    run_perf_tests (tests);

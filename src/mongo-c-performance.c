@@ -104,50 +104,88 @@ should_run_test (const char *name)
 
 
 void
-run_perf_tests (perf_test_t *tests)
+perf_test_setup (perf_test_t *test)
+{
+}
+
+
+void
+perf_test_before (perf_test_t *test)
+{
+}
+
+
+void
+perf_test_task (perf_test_t *test)
+{
+}
+
+
+void
+perf_test_after (perf_test_t *test)
+{
+}
+
+
+void
+perf_test_teardown (perf_test_t *test)
+{
+}
+
+
+void
+perf_test_init (perf_test_t *test,
+                const char  *name,
+                const char  *data_path)
+{
+   test->name = name;
+   test->data_path = data_path;
+
+   test->setup = perf_test_setup;
+   test->before = perf_test_before;
+   test->task = perf_test_task;
+   test->after = perf_test_after;
+   test->teardown = perf_test_teardown;
+}
+
+
+void
+run_perf_tests (perf_test_t **tests)
 {
    perf_test_t *test;
    int64_t *results;
+   int test_idx;
    int i;
    int64_t start;
    double median;
 
-   test = tests;
    results = bson_malloc (NUM_ITERATIONS * sizeof (int64_t));
 
-   while (test->name) {
+   test_idx = 0;
+   while (tests[test_idx]) {
+      test = tests[test_idx];
       if (should_run_test (test->name)) {
-         test->context = bson_malloc0 (test->context_sz);
-         if (test->setup) {
-            test->setup (test);
-         }
+         test->setup (test);
 
          for (i = 0; i < NUM_ITERATIONS; i++) {
-            if (test->before) {
-               test->before (test);
-            }
+            test->before (test);
 
             start = bson_get_monotonic_time ();
             test->task (test);
             results[i] = bson_get_monotonic_time () - start;
 
-            if (test->after) {
-               test->after (test);
-            }
-         }
-
-         if (test->teardown) {
-            test->teardown (test);
+            test->after (test);
          }
 
          qsort ((void *) results, NUM_ITERATIONS, sizeof (int64_t), cmp);
-         median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e3;
+         median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e6;
          printf ("%25s, %f\n", test->name, median);
 
-         bson_free (test->context);
+         test->teardown (test);
       }
 
-      test++;
+      bson_free (test);
+      test_idx++;
    }
 
    bson_free (results);

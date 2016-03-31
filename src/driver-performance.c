@@ -25,6 +25,7 @@
  */
 
 typedef struct {
+   perf_test_t          base;
    mongoc_client_t     *client;
    mongoc_collection_t *collection;
 } driver_test_t;
@@ -32,16 +33,19 @@ typedef struct {
 static void
 driver_test_setup (perf_test_t *test)
 {
-   driver_test_t *context;
+   driver_test_t *driver_test;
    mongoc_database_t *db;
    bson_error_t error;
 
-   context = (driver_test_t *) test->context;
-   context->client = mongoc_client_new (NULL);
-   context->collection = mongoc_client_get_collection (context->client,
-                                                       "perftest", "corpus");
+   perf_test_setup (test);
 
-   db = mongoc_client_get_database (context->client, "perftest");
+   driver_test = (driver_test_t *) test;
+   driver_test->client = mongoc_client_new (NULL);
+   driver_test->collection = mongoc_client_get_collection (driver_test->client,
+                                                           "perftest",
+                                                           "corpus");
+
+   db = mongoc_client_get_database (driver_test->client, "perftest");
    if (!mongoc_database_drop (db, &error)) {
       MONGOC_ERROR ("database_drop: %s\n", error.message);
       abort ();
@@ -53,13 +57,25 @@ driver_test_setup (perf_test_t *test)
 static void
 driver_test_teardown (perf_test_t *test)
 {
-   driver_test_t *context;
+   driver_test_t *driver_test;
 
-   context = (driver_test_t *) test->context;
-   mongoc_collection_destroy (context->collection);
-   mongoc_client_destroy (context->client);
+   driver_test = (driver_test_t *) test;
+   mongoc_collection_destroy (driver_test->collection);
+   mongoc_client_destroy (driver_test->client);
+
+   perf_test_teardown (test);
 }
 
+static void
+driver_test_init (driver_test_t *driver_test,
+                  const char    *name,
+                  const char    *data_path)
+{
+   perf_test_init (&driver_test->base, name, data_path);
+
+   driver_test->base.setup = driver_test_setup;
+   driver_test->base.teardown = driver_test_teardown;
+}
 
 /*
  *  -------- RUN-COMMAND BENCHMARK -------------------------------------------
@@ -74,30 +90,28 @@ typedef struct
 static void
 run_cmd_setup (perf_test_t *test)
 {
-   run_cmd_test_t *context;
+   run_cmd_test_t *run_cmd_test;
 
    driver_test_setup (test);
 
-   context = (run_cmd_test_t *) test->context;
-   bson_init (&context->ismaster);
-   BSON_APPEND_BOOL (&context->ismaster, "ismaster", true);
+   run_cmd_test = (run_cmd_test_t *) test;
+   bson_init (&run_cmd_test->ismaster);
+   BSON_APPEND_BOOL (&run_cmd_test->ismaster, "ismaster", true);
 }
-
-#define run_cmd_before NULL
 
 static void
 run_cmd_task (perf_test_t *test)
 {
-   run_cmd_test_t *context;
+   run_cmd_test_t *run_cmd_test;
    bson_error_t error;
    int i;
    bool r;
 
-   context = (run_cmd_test_t *) test->context;
+   run_cmd_test = (run_cmd_test_t *) test;
 
    for (i = 0; i < NUM_DOCS; i++) {
-      r = mongoc_client_command_simple (context->base.client, "admin",
-                                        &context->ismaster, NULL,
+      r = mongoc_client_command_simple (run_cmd_test->base.client, "admin",
+                                        &run_cmd_test->ismaster, NULL,
                                         NULL, &error);
 
       if (!r) {
@@ -107,17 +121,35 @@ run_cmd_task (perf_test_t *test)
    }
 }
 
-#define run_cmd_after NULL
-
 static void
 run_cmd_teardown (perf_test_t *test)
 {
-   run_cmd_test_t *context;
+   run_cmd_test_t *run_cmd_test;
 
-   context = (run_cmd_test_t *) test->context;
-   bson_destroy (&context->ismaster);
+   run_cmd_test = (run_cmd_test_t *) test;
+   bson_destroy (&run_cmd_test->ismaster);
 
    driver_test_teardown (test);
+}
+
+static void
+run_cmd_init (run_cmd_test_t *run_cmd_test)
+{
+   driver_test_init (&run_cmd_test->base, "TestRunCommand", NULL);
+   run_cmd_test->base.base.setup = run_cmd_setup;
+   run_cmd_test->base.base.task = run_cmd_task;
+   run_cmd_test->base.base.teardown = run_cmd_teardown;
+}
+
+static perf_test_t *
+run_cmd_new (void)
+{
+   run_cmd_test_t *run_cmd_test;
+
+   run_cmd_test = bson_malloc0 (sizeof (run_cmd_test_t));
+   run_cmd_init (run_cmd_test);
+
+   return (perf_test_t *) run_cmd_test;
 }
 
 
@@ -130,7 +162,7 @@ typedef driver_test_t find_one_test_t;
 static void
 find_one_setup (perf_test_t *test)
 {
-   find_one_test_t *context;
+   find_one_test_t *find_one_test;
    bson_t tweet;
    bson_t empty;
    mongoc_bulk_operation_t *bulk;
@@ -139,10 +171,10 @@ find_one_setup (perf_test_t *test)
 
    driver_test_setup (test);
 
-   context = (find_one_test_t *) test->context;
+   find_one_test = (find_one_test_t *) test;
    read_json_file (test->data_path, &tweet);
 
-   bulk = mongoc_collection_create_bulk_operation (context->collection,
+   bulk = mongoc_collection_create_bulk_operation (find_one_test->collection,
                                                    true, NULL);
 
    for (i = 0; i < NUM_DOCS; i++) {
@@ -162,12 +194,10 @@ find_one_setup (perf_test_t *test)
    bson_destroy (&tweet);
 }
 
-#define find_one_before NULL
-
 static void
 find_one_task (perf_test_t *test)
 {
-   find_one_test_t *context;
+   find_one_test_t *driver_test;
    bson_t query;
    bson_iter_t iter;
    mongoc_cursor_t *cursor;
@@ -175,14 +205,14 @@ find_one_task (perf_test_t *test)
    bson_error_t error;
    int i;
 
-   context = (find_one_test_t *) test->context;
+   driver_test = (find_one_test_t *) test;
    bson_init (&query);
    bson_append_int32 (&query, "_id", 3, 1);
    bson_iter_init_find (&iter, &query, "_id");
 
    for (i = 0; i < NUM_DOCS; i++) {
       bson_iter_overwrite_int32 (&iter, (int32_t) i);
-      cursor = mongoc_collection_find (context->collection,
+      cursor = mongoc_collection_find (driver_test->collection,
                                        MONGOC_QUERY_NONE, 0, 1, 0,
                                        &query, NULL, NULL);
 
@@ -202,12 +232,25 @@ find_one_task (perf_test_t *test)
    bson_destroy (&query);
 }
 
-#define find_one_after NULL
-
 static void
-find_one_teardown (perf_test_t *test)
+find_one_init (find_one_test_t *find_one_test)
 {
-   driver_test_teardown (test);
+   driver_test_init (find_one_test,
+                     "TestFindOneByID",
+                     "SINGLE_DOCUMENT/TWEET.json");
+   find_one_test->base.setup = find_one_setup;
+   find_one_test->base.task = find_one_task;
+}
+
+static perf_test_t *
+find_one_new (void)
+{
+   find_one_test_t *find_one_test;
+
+   find_one_test = (find_one_test_t *) bson_malloc0 (sizeof (find_one_test_t));
+   find_one_init (find_one_test);
+
+   return (perf_test_t *) find_one_test;
 }
 
 
@@ -225,25 +268,25 @@ typedef struct
 static void
 single_doc_setup (perf_test_t *test)
 {
-   single_doc_test_t *context;
+   single_doc_test_t *driver_test;
 
    driver_test_setup (test);
 
-   context = (single_doc_test_t *) test->context;
+   driver_test = (single_doc_test_t *) test;
    assert (test->data_path);
-   read_json_file (test->data_path, &context->doc);
+   read_json_file (test->data_path, &driver_test->doc);
 }
 
 static void
 single_doc_before (perf_test_t *test)
 {
-   single_doc_test_t *context;
+   single_doc_test_t *driver_test;
    bson_t cmd = BSON_INITIALIZER;
    bson_error_t error;
 
-   context = (single_doc_test_t *) test->context;
+   driver_test = (single_doc_test_t *) test;
 
-   if (!mongoc_collection_drop (context->base.collection, &error) &&
+   if (!mongoc_collection_drop (driver_test->base.collection, &error) &&
        !strstr (error.message, "ns not found")) {
       MONGOC_ERROR ("drop collection: %s\n", error.message);
       abort ();
@@ -251,7 +294,7 @@ single_doc_before (perf_test_t *test)
 
    BSON_APPEND_UTF8 (&cmd, "create", "corpus");
 
-   if (!mongoc_collection_command_simple (context->base.collection, &cmd,
+   if (!mongoc_collection_command_simple (driver_test->base.collection, &cmd,
                                           NULL, NULL, &error)) {
       MONGOC_ERROR ("create collection: %s\n", error.message);
       abort ();
@@ -261,19 +304,19 @@ single_doc_before (perf_test_t *test)
 }
 
 static void
-single_doc_task (perf_test_t *test,
-                 int          num_docs)
+_single_doc_task (perf_test_t *test,
+                  int          num_docs)
 {
-   single_doc_test_t *context;
+   single_doc_test_t *driver_test;
    bson_error_t error;
    int i;
 
-   context = (single_doc_test_t *) test->context;
+   driver_test = (single_doc_test_t *) test;
 
    for (i = 0; i < num_docs; i++) {
-      if (!mongoc_collection_insert (context->base.collection,
+      if (!mongoc_collection_insert (driver_test->base.collection,
                                      MONGOC_INSERT_NONE,
-                                     &context->doc, NULL, &error)) {
+                                     &driver_test->doc, NULL, &error)) {
          MONGOC_ERROR ("insert: %s\n", error.message);
          abort ();
       }
@@ -283,66 +326,116 @@ single_doc_task (perf_test_t *test,
 static void
 single_doc_teardown (perf_test_t *test)
 {
-   single_doc_test_t *context;
+   single_doc_test_t *driver_test;
 
-   context = (single_doc_test_t *) test->context;
-   bson_destroy (&context->doc);
+   driver_test = (single_doc_test_t *) test;
+   bson_destroy (&driver_test->doc);
 
    driver_test_teardown (test);
 }
 
-typedef single_doc_test_t small_doc_test_t;
+static void
+single_doc_init (single_doc_test_t *single_doc_test,
+                 const char        *name,
+                 const char        *data_path)
+{
+   driver_test_init (&single_doc_test->base, name, data_path);
+   single_doc_test->base.base.setup = single_doc_setup;
+   single_doc_test->base.base.before = single_doc_before;
+   single_doc_test->base.base.teardown = single_doc_teardown;
+}
 
-#define small_doc_setup single_doc_setup
-#define small_doc_before single_doc_before
+
+/*
+ *  -------- SMALL-DOC BENCHMARK ---------------------------------------------
+ */
+
+typedef single_doc_test_t small_doc_test_t;
 
 static void
 small_doc_task (perf_test_t *test)
 {
-   single_doc_task (test, NUM_DOCS);
+   _single_doc_task (test, NUM_DOCS);
 }
 
-#define small_doc_after NULL
-#define small_doc_teardown single_doc_teardown
+static void
+small_doc_init (small_doc_test_t *small_doc_test)
+{
+   single_doc_init (small_doc_test,
+                    "TestSmallDocInsertOne",
+                    "SINGLE_DOCUMENT/SMALL_DOC.json");
+   small_doc_test->base.base.task = small_doc_task;
+}
+
+static perf_test_t *
+small_doc_new (void)
+{
+   small_doc_test_t *small_doc_test;
+
+   small_doc_test =
+      (small_doc_test_t *) bson_malloc0 (sizeof (small_doc_test_t));
+   small_doc_init (small_doc_test);
+
+   return (perf_test_t *) small_doc_test;
+}
+
+
+/*
+ *  -------- LARGE-DOC BENCHMARK ---------------------------------------------
+ */
 
 typedef single_doc_test_t large_doc_test_t;
-
-#define large_doc_setup single_doc_setup
-#define large_doc_before single_doc_before
 
 static void
 large_doc_task (perf_test_t *test)
 {
-   single_doc_task (test, 10);
+   _single_doc_task (test, 10);
 }
 
-#define large_doc_after NULL
-#define large_doc_teardown single_doc_teardown
+static void
+large_doc_init (large_doc_test_t *large_doc_test)
+{
+   single_doc_init (large_doc_test,
+                    "TestLargeDocInsertOne",
+                    "SINGLE_DOCUMENT/LARGE_DOC.json");
+   large_doc_test->base.base.task = large_doc_task;
+}
 
-typedef single_doc_test_t find_many_test_t;
+static perf_test_t *
+large_doc_new (void)
+{
+   large_doc_test_t *large_doc_test;
+
+   large_doc_test =
+      (large_doc_test_t *) bson_malloc0 (sizeof (large_doc_test_t));
+   large_doc_init (large_doc_test);
+
+   return (perf_test_t *) large_doc_test;
+}
 
 
 /*
  *  -------- FIND-MANY BENCHMARK ---------------------------------------------
  */
 
+typedef single_doc_test_t find_many_test_t;
+
 static void
 find_many_setup (perf_test_t *test)
 {
-   single_doc_test_t *context;
+   single_doc_test_t *driver_test;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    int i;
 
-   test->data_path = "SINGLE_DOCUMENT/TWEET.json";
    single_doc_setup (test);
 
-   context = (single_doc_test_t *) test->context;
-   bulk = mongoc_collection_create_bulk_operation (context->base.collection,
+   driver_test = (single_doc_test_t *) test;
+   bulk = mongoc_collection_create_bulk_operation (driver_test->base.collection,
                                                    true, NULL);
 
    for (i = 0; i < NUM_DOCS; i++) {
-      mongoc_bulk_operation_insert (bulk, &context->doc);
+      mongoc_bulk_operation_insert (bulk, &driver_test->doc);
    }
 
    if (!mongoc_bulk_operation_execute (bulk, NULL, &error)) {
@@ -353,19 +446,18 @@ find_many_setup (perf_test_t *test)
    mongoc_bulk_operation_destroy (bulk);
 }
 
-#define find_many_before NULL
-
 static void
 find_many_task (perf_test_t *test)
 {
-   single_doc_test_t *context;
+   single_doc_test_t *driver_test;
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
 
-   context = (single_doc_test_t *) test->context;
-   cursor = mongoc_collection_find (context->base.collection, MONGOC_QUERY_NONE,
+   driver_test = (single_doc_test_t *) test;
+   cursor = mongoc_collection_find (driver_test->base.collection,
+                                    MONGOC_QUERY_NONE,
                                     0, 1, 0, &query, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
@@ -379,8 +471,27 @@ find_many_task (perf_test_t *test)
    mongoc_cursor_destroy (cursor);
 }
 
-#define find_many_after NULL
-#define find_many_teardown single_doc_teardown
+static void
+find_many_init (find_many_test_t *find_many_test)
+{
+   single_doc_init (find_many_test,
+                    "TestFindManyAndEmptyCursor",
+                    "SINGLE_DOCUMENT/TWEET.json");
+   find_many_test->base.base.setup = find_many_setup;
+   find_many_test->base.base.task = find_many_task;
+}
+
+static perf_test_t *
+find_many_new (void)
+{
+   find_many_test_t *find_many_test;
+
+   find_many_test =
+      (find_many_test_t *) bson_malloc0 (sizeof (find_many_test_t));
+   find_many_init (find_many_test);
+
+   return (perf_test_t *) find_many_test;
+}
 
 
 /*
@@ -395,36 +506,36 @@ typedef struct {
 } bulk_insert_test_t;
 
 static void
-bulk_insert_setup (perf_test_t *test,
-                   int          num_docs)
+_bulk_insert_setup (perf_test_t *test,
+                    int          num_docs)
 {
-   bulk_insert_test_t *context;
+   bulk_insert_test_t *driver_test;
    int i;
 
    single_doc_setup (test);
 
-   context = (bulk_insert_test_t *) test->context;
-   context->num_docs = num_docs;
-   context->docs = (bson_t **) bson_malloc (num_docs * sizeof (bson_t *));
+   driver_test = (bulk_insert_test_t *) test;
+   driver_test->num_docs = num_docs;
+   driver_test->docs = (bson_t **) bson_malloc (num_docs * sizeof (bson_t *));
    for (i = 0; i < num_docs; i++) {
-      context->docs[i] = &context->base.doc;
+      driver_test->docs[i] = &driver_test->base.doc;
    }
 }
 
 static void
 bulk_insert_task (perf_test_t *test)
 {
-   bulk_insert_test_t *context;
+   bulk_insert_test_t *driver_test;
    bson_error_t error;
    uint32_t num_docs;
 
-   context = (bulk_insert_test_t *) test->context;
-   num_docs = (uint32_t) context->num_docs;
+   driver_test = (bulk_insert_test_t *) test;
+   num_docs = (uint32_t) driver_test->num_docs;
 
 BEGIN_IGNORE_DEPRECATIONS
-   if (!mongoc_collection_insert_bulk (context->base.base.collection,
+   if (!mongoc_collection_insert_bulk (driver_test->base.base.collection,
                                        MONGOC_INSERT_NONE,
-                                       (const bson_t **) context->docs,
+                                       (const bson_t **) driver_test->docs,
                                        num_docs, NULL, &error)) {
       MONGOC_ERROR ("insert_bulk: %s\n", error.message);
       abort ();
@@ -435,56 +546,90 @@ END_IGNORE_DEPRECATIONS
 static void
 bulk_insert_teardown (perf_test_t *test)
 {
-   bulk_insert_test_t *context;
+   bulk_insert_test_t *driver_test;
 
-   context = (bulk_insert_test_t *) test->context;
-   bson_free (context->docs);
+   driver_test = (bulk_insert_test_t *) test;
+   bson_free (driver_test->docs);
 
    single_doc_teardown (test);
 }
 
 static void
-bulk_insert_small_doc_setup (perf_test_t *test)
+bulk_insert_init (bulk_insert_test_t *bulk_insert_test,
+                  const char         *name,
+                  const char         *data_path)
 {
-   bulk_insert_setup (test, NUM_DOCS);
+   single_doc_init (&bulk_insert_test->base, name, data_path);
+   bulk_insert_test->base.base.base.task = bulk_insert_task;
+   bulk_insert_test->base.base.base.teardown = bulk_insert_teardown;
 }
 
-#define bulk_insert_small_doc_before single_doc_before
-#define bulk_insert_small_doc_task bulk_insert_task
-#define bulk_insert_small_doc_after NULL
-#define bulk_insert_small_doc_teardown bulk_insert_teardown
+static void
+bulk_insert_small_doc_setup (perf_test_t *test)
+{
+   _bulk_insert_setup (test, NUM_DOCS);
+}
+
+static void
+bulk_insert_small_init (bulk_insert_test_t *bulk_insert_test)
+{
+   bulk_insert_init (bulk_insert_test,
+                    "TestSmallDocBulkInsert",
+                    "SINGLE_DOCUMENT/SMALL_DOC.json");
+   bulk_insert_test->base.base.base.setup = bulk_insert_small_doc_setup;
+}
+
+static perf_test_t *
+bulk_insert_small_new (void)
+{
+   bulk_insert_test_t *bulk_insert_test;
+
+   bulk_insert_test =
+      (bulk_insert_test_t *) bson_malloc0 (sizeof (bulk_insert_test_t));
+   bulk_insert_small_init (bulk_insert_test);
+
+   return (perf_test_t *) bulk_insert_test;
+}
 
 static void
 bulk_insert_large_doc_setup (perf_test_t *test)
 {
-   bulk_insert_setup (test, 10);
+   _bulk_insert_setup (test, 10);
 }
 
-#define bulk_insert_large_doc_before single_doc_before
-#define bulk_insert_large_doc_task bulk_insert_task
-#define bulk_insert_large_doc_after NULL
-#define bulk_insert_large_doc_teardown bulk_insert_teardown
+static void
+bulk_insert_large_init (bulk_insert_test_t *bulk_insert_test)
+{
+   bulk_insert_init (bulk_insert_test,
+                     "TestLargeDocBulkInsert",
+                     "SINGLE_DOCUMENT/LARGE_DOC.json");
+   bulk_insert_test->base.base.base.setup = bulk_insert_large_doc_setup;
+}
 
+static perf_test_t *
+bulk_insert_large_new (void)
+{
+   bulk_insert_test_t *bulk_insert_test;
 
-#define NO_DOC NULL
+   bulk_insert_test =
+      (bulk_insert_test_t *) bson_malloc0 (sizeof (bulk_insert_test_t));
+   bulk_insert_large_init (bulk_insert_test);
 
-#define DRIVER_TEST(prefix, name, filename) \
-   { sizeof (prefix ## _test_t), #name, "SINGLE_DOCUMENT/" #filename ".json", \
-     prefix ## _setup, prefix ## _before, prefix ## _task, \
-     prefix ## _after, prefix ## _teardown }
+   return (perf_test_t *) bulk_insert_test;
+}
 
 void
 driver_perf (void)
 {
-   perf_test_t tests[] = {
-      DRIVER_TEST (run_cmd,   TestRunCommand,             NO_DOC),
-      DRIVER_TEST (find_one,  TestFindOneByID,            TWEET),
-      DRIVER_TEST (small_doc, TestSmallDocInsertOne,      SMALL_DOC),
-      DRIVER_TEST (large_doc, TestLargeDocInsertOne,      LARGE_DOC),
-      DRIVER_TEST (find_many, TestFindManyAndEmptyCursor, NO_DOC),
-      DRIVER_TEST (small_doc, TestSmallDocBulkInsert,     SMALL_DOC),
-      DRIVER_TEST (large_doc, TestLargeDocBulkInsert,     LARGE_DOC),
-      { 0 },
+   perf_test_t *tests[] = {
+      run_cmd_new (),
+      find_one_new (),
+      small_doc_new (),
+      large_doc_new (),
+      find_many_new (),
+      bulk_insert_small_new (),
+      bulk_insert_large_new (),
+      NULL,
    };
 
    run_perf_tests (tests);

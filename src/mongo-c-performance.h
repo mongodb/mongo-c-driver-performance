@@ -45,7 +45,6 @@ typedef struct _perf_test_t perf_test_t;
 typedef void (*perf_callback_t)(perf_test_t *test);
 
 struct _perf_test_t {
-   size_t            context_sz;
    const char       *name;
    const char       *data_path;
    perf_callback_t   setup;
@@ -53,13 +52,20 @@ struct _perf_test_t {
    perf_callback_t   task;
    perf_callback_t   after;
    perf_callback_t   teardown;
-   void             *context;
 };
 
-void parse_args     (int            argc,
-                     char         **argv);
-void read_json_file (const char    *data_path,
-                     bson_t        *bson);
-void run_perf_tests (perf_test_t  *tests);
+void parse_args         (int            argc,
+                         char         **argv);
+void read_json_file     (const char    *data_path,
+                         bson_t        *bson);
+void perf_test_init     (perf_test_t   *test,
+                         const char    *name,
+                         const char    *data_path);
+void perf_test_teardown (perf_test_t   *test);
+void perf_test_setup    (perf_test_t   *test);
+void perf_test_before   (perf_test_t   *test);
+void perf_test_task     (perf_test_t   *test);
+void perf_test_after    (perf_test_t   *test);
+void run_perf_tests     (perf_test_t  **tests);
 
 #endif //MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
