@@ -31,8 +31,10 @@ typedef struct {
    perf_test_t            base;
    mongoc_client_pool_t  *pool;
    int                    cnt;
-   char                 **file_names;
+   char                 **filenames;
+   char                 **paths;
    pthread_t             *threads;
+   bool                   add_file_id;
 } import_test_t;
 
 
@@ -64,7 +66,7 @@ import_setup (perf_test_t *test)
    mongoc_client_t *client;
    mongoc_database_t *db;
    bson_error_t error;
-   char *path;
+   char *data_dir;
    DIR *dirp;
    struct dirent *dp;
    int i;
@@ -72,6 +74,8 @@ import_setup (perf_test_t *test)
    perf_test_setup (test);
 
    import_test = (import_test_t *) test;
+   import_test->add_file_id = false;
+
    uri = mongoc_uri_new (NULL);
    import_test->pool = mongoc_client_pool_new (uri);
 
@@ -82,8 +86,8 @@ import_setup (perf_test_t *test)
       abort ();
    }
 
-   path = bson_strdup_printf ("performance-testdata/%s", test->data_path);
-   dirp = opendir(path);
+   data_dir = bson_strdup_printf ("performance-testdata/%s", test->data_path);
+   dirp = opendir(data_dir);
    if (!dirp) {
       perror ("opening data path");
       abort ();
@@ -98,13 +102,15 @@ import_setup (perf_test_t *test)
    }
 
    import_test->cnt = i;
-   import_test->file_names = (char **) bson_malloc0 (i * sizeof (char *));
+   import_test->filenames = (char **) bson_malloc0 (i * sizeof (char *));
+   import_test->paths = (char **) bson_malloc0 (i * sizeof (char *));
    rewinddir (dirp);
    i = 0;
 
    while ((dp = readdir (dirp)) != NULL) {
       if (!strcmp (get_ext (dp->d_name), "txt")) {
-         import_test->file_names[i] = bson_strdup_printf (
+         import_test->filenames[i] = bson_strdup (dp->d_name);
+         import_test->paths[i] = bson_strdup_printf (
             "performance-testdata/%s/%s", test->data_path, dp->d_name);
 
          ++i;
@@ -116,7 +122,7 @@ import_setup (perf_test_t *test)
    closedir (dirp);
    mongoc_database_destroy (db);
    mongoc_client_pool_push (import_test->pool, client);
-   bson_free (path);
+   bson_free (data_dir);
    mongoc_uri_destroy (uri);
 }
 
@@ -128,6 +134,7 @@ import_before (perf_test_t *test)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_t cmd = BSON_INITIALIZER;
+   bson_t index_keys = BSON_INITIALIZER;
    bson_error_t error;
 
    perf_test_before (test);
@@ -149,8 +156,17 @@ import_before (perf_test_t *test)
       abort ();
    }
 
+   if (import_test->add_file_id) {
+      BSON_APPEND_INT32 (&index_keys, "file", 1);
+      if (!mongoc_collection_create_index (collection, &index_keys, NULL, &error)) {
+         MONGOC_ERROR ("create_index: %s\n", error.message);
+         abort ();
+      }
+   }
+
    import_test->threads = bson_malloc (import_test->cnt * sizeof (pthread_t));
 
+   bson_destroy (&index_keys);
    bson_destroy (&cmd);
    mongoc_collection_destroy (collection);
    mongoc_client_pool_push (import_test->pool, client);
@@ -161,22 +177,24 @@ static void *
 _import_thread (void *p)
 {
    import_thread_context_t *ctx;
+   bool add_file_id;
    bson_error_t error;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
+   const char *path;
    bson_json_reader_t *reader;
    int r;
    bson_t bson = BSON_INITIALIZER;
 
    ctx = (import_thread_context_t *) p;
+   add_file_id = ctx->test->add_file_id;
    client = mongoc_client_pool_pop (ctx->test->pool);
    collection = mongoc_client_get_collection (client, "perftest", "corpus");
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
 
-   reader = bson_json_reader_new_from_file (ctx->test->file_names[ctx->offset],
-                                            &error);
-
+   path = ctx->test->paths[ctx->offset];
+   reader = bson_json_reader_new_from_file (path, &error);
    if (!reader) {
       MONGOC_ERROR ("%s\n", error.message);
       abort ();
@@ -186,6 +204,10 @@ _import_thread (void *p)
       if (r < 0) {
          MONGOC_ERROR ("reader_read: %s\n", error.message);
          abort ();
+      }
+
+      if (add_file_id) {
+         BSON_APPEND_UTF8 (&bson, "file", ctx->test->filenames[ctx->offset]);
       }
 
       mongoc_bulk_operation_insert (bulk, &bson);
@@ -263,10 +285,12 @@ import_teardown (perf_test_t *test)
    import_test = (import_test_t *) test;
 
    for (i = 0; i < import_test->cnt; i++) {
-      bson_free (import_test->file_names[i]);
+      bson_free (import_test->filenames[i]);
+      bson_free (import_test->paths[i]);
    }
 
-   bson_free (import_test->file_names);
+   bson_free (import_test->filenames);
+   bson_free (import_test->paths);
    mongoc_client_pool_destroy (import_test->pool);
 
 
@@ -300,11 +324,253 @@ import_perf_new (void)
 }
 
 
+/*
+ *  -------- LDJSON MULTI-FILE EXPORT BENCHMARK -------------------------------
+ */
+
+typedef struct {
+   perf_test_t            base;
+   mongoc_client_pool_t  *pool;
+   int                    cnt;
+   pthread_t             *threads;
+} export_test_t;
+
+
+typedef struct {
+   export_test_t *test;
+   int            offset;
+} export_thread_context_t;
+
+
+static void 
+_setup_load_docs (void)
+{
+   perf_test_t *import;
+
+   /* insert all the documents, with a "file" field */
+   import = import_perf_new ();
+   import->setup (import);
+   ((import_test_t *) import)->add_file_id = true;
+   import->before (import);
+   import->task (import);
+   import->after (import);
+   import->teardown (import);
+   bson_free (import);
+}
+
+#define TMP_DIR "/tmp/TestJsonMultiExport"
+
+static void
+_prep_dir (void)
+{
+   DIR *dirp;
+   struct dirent *dp;
+   char filepath[PATH_MAX];
+   struct stat sb;
+
+   if (mkdir (TMP_DIR, S_IRWXU) < 0 && errno != EEXIST) {
+      perror ("create " TMP_DIR);
+      abort ();
+   }
+
+   dirp = opendir (TMP_DIR);
+   if (!dirp) {
+      perror ("opening data path");
+      abort ();
+   }
+
+   while ((dp = readdir(dirp)) != NULL) {
+      bson_snprintf (filepath, PATH_MAX, "%s/%s", TMP_DIR, dp->d_name);
+      if (stat(filepath, &sb) == 0 && S_ISREG (sb.st_mode)) {
+         if (remove (filepath)) {
+            perror ("remove");
+            abort ();
+         }
+      }
+   }
+
+   closedir(dirp);
+}
+
+
+static void
+export_setup (perf_test_t *test)
+{
+
+   export_test_t *export_test;
+   mongoc_uri_t *uri;
+
+   _setup_load_docs ();
+   perf_test_setup (test);
+
+   export_test = (export_test_t *) test;
+   uri = mongoc_uri_new (NULL);
+   export_test->pool = mongoc_client_pool_new (uri);
+
+   mongoc_uri_destroy (uri);
+}
+
+
+static void
+export_before (perf_test_t *test)
+{
+   export_test_t *export_test;
+
+   _prep_dir ();
+   perf_test_before (test);
+
+   export_test = (export_test_t *) test;
+   export_test->cnt = 100;  /* DANGER!: assumes test corpus won't change */
+   export_test->threads = bson_malloc (export_test->cnt * sizeof (pthread_t));
+}
+
+
+static void *
+_export_thread (void *p)
+{
+   export_thread_context_t *ctx;
+   char filename[PATH_MAX];
+   char path[PATH_MAX];
+   FILE *fp;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t query = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   char *json;
+   size_t sz;
+   bson_error_t error;
+
+   ctx = (export_thread_context_t *) p;
+
+   /* these filenames are 1-indexed */
+   bson_snprintf (filename, PATH_MAX, "LDJSON%03d.txt", ctx->offset + 1);
+   bson_snprintf (path, PATH_MAX, "%s/%s", TMP_DIR, filename);
+   fp = fopen (path, "w+");
+   if (!fp) {
+      perror ("fopen");
+      abort ();
+   }
+
+   client = mongoc_client_pool_pop (ctx->test->pool);
+   collection = mongoc_client_get_collection (client, "perftest", "corpus");
+   BSON_APPEND_UTF8 (&query, "file", filename);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    &query, NULL, NULL);
+   while (mongoc_cursor_next (cursor, &doc)) {
+      json = bson_as_json (doc, &sz);
+      if (fwrite (json, sizeof (char), sz, fp) < sz) {
+         perror ("fwrite");
+         abort ();
+      }
+
+      bson_free (json);
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("cursor error: %s\n", error.message);
+      abort ();
+   }
+
+   fclose (fp);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_pool_push (ctx->test->pool, client);
+
+   return (void *) 1;
+}
+
+
+static void
+export_task (perf_test_t *test)
+{
+   export_test_t *export_test;
+   export_thread_context_t *contexts;
+   int i;
+   void *r;
+
+   export_test = (export_test_t *) test;
+   contexts = bson_malloc (export_test->cnt * sizeof (export_thread_context_t));
+
+   for (i = 0; i < export_test->cnt; i++) {
+      contexts[i].test = export_test;
+      contexts[i].offset = i;
+      pthread_create (&export_test->threads[i], NULL,
+                      _export_thread, (void *) &contexts[i]);
+   }
+
+   for (i = 0; i < export_test->cnt; i++) {
+      if (pthread_join (export_test->threads[i], &r)) {
+         perror ("pthread_join");
+         abort ();
+      }
+
+      if ((int) r != 1) {
+         MONGOC_ERROR ("export_thread returned %d\n", (int) r);
+         abort ();
+      }
+   }
+
+   bson_free (contexts);
+}
+
+
+static void
+export_after (perf_test_t *test)
+{
+   export_test_t *export_test;
+
+   export_test = (export_test_t *) test;
+   bson_free (export_test->threads);
+   export_test->threads = NULL;
+
+   perf_test_after (test);
+}
+
+
+static void
+export_teardown (perf_test_t *test)
+{
+   export_test_t *export_test;
+
+   export_test = (export_test_t *) test;
+   mongoc_client_pool_destroy (export_test->pool);
+
+   perf_test_teardown (test);
+}
+
+static void
+export_init (export_test_t *export_test)
+{
+   perf_test_init (&export_test->base,
+                   "TestJsonMultiExport",
+                   "PARALLEL/LDJSON_MULTI");
+   export_test->base.setup = export_setup;
+   export_test->base.before = export_before;
+   export_test->base.task = export_task;
+   export_test->base.after = export_after;
+   export_test->base.teardown = export_teardown;
+}
+
+
+static perf_test_t *
+export_perf_new (void)
+{
+   export_test_t *export_test;
+
+   export_test = (export_test_t *) bson_malloc0 (sizeof (export_test_t));
+   export_init (export_test);
+
+   return (perf_test_t *) export_test;
+}
+
+
 void
 parallel_perf (void)
 {
    perf_test_t *tests[] = {
       import_perf_new (),
+      export_perf_new (),
       NULL,
    };
 
