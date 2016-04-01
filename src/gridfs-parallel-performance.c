@@ -27,16 +27,15 @@
  *  -------- GRIDFS MULTI-FILE UPLOAD BENCHMARK -------------------------------
  */
 
-typedef struct _multi_upload_thread_context_t multi_upload_thread_context_t;
 
-typedef struct _multi_upload_thread_context_t {
-   char                            *filename;
-   char                            *path;
-   pthread_t                        thread;
-   mongoc_client_t                 *client;
-   mongoc_stream_t                 *stream;
-   mongoc_gridfs_t                 *gridfs;
-} _multi_upload_thread_context_t;
+typedef struct {
+   char            *filename;
+   char            *path;
+   pthread_t        thread;
+   mongoc_client_t *client;
+   mongoc_stream_t *stream;
+   mongoc_gridfs_t *gridfs;
+} multi_upload_thread_context_t;
 
 typedef struct {
    perf_test_t                    base;

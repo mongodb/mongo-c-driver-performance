@@ -425,6 +425,7 @@ _export_thread (void *p)
    const bson_t *doc;
    char *json;
    size_t sz;
+   size_t total_sz;
    bson_error_t error;
 
    ctx = (export_thread_context_t *) p;
@@ -443,6 +444,8 @@ _export_thread (void *p)
    BSON_APPEND_UTF8 (&query, "file", filename);
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, NULL);
+
+   total_sz = 0;
    while (mongoc_cursor_next (cursor, &doc)) {
       json = bson_as_json (doc, &sz);
       if (fwrite (json, sizeof (char), sz, fp) < sz) {
@@ -451,12 +454,15 @@ _export_thread (void *p)
       }
 
       bson_free (json);
+      total_sz += sz;
    }
 
    if (mongoc_cursor_error (cursor, &error)) {
       MONGOC_ERROR ("cursor error: %s\n", error.message);
       abort ();
    }
+
+   assert (total_sz > 0);
 
    fclose (fp);
    mongoc_cursor_destroy (cursor);
