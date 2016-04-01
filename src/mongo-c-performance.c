@@ -18,6 +18,7 @@
 
 #include <bson.h>
 #include <mongoc.h>
+#include <dirent.h>
 
 
 const int NUM_ITERATIONS        = 1;
@@ -25,6 +26,39 @@ const int NUM_DOCS            = 1;
 
 static int    g_num_tests;
 static char **g_test_names;
+
+
+void
+prep_tmp_dir (const char *path)
+{
+   DIR *dirp;
+   struct dirent *dp;
+   char filepath[PATH_MAX];
+   struct stat sb;
+
+   if (mkdir (path, S_IRWXU) < 0 && errno != EEXIST) {
+      perror ("mkdir");
+      abort ();
+   }
+
+   dirp = opendir (path);
+   if (!dirp) {
+      perror ("opening data path");
+      abort ();
+   }
+
+   while ((dp = readdir(dirp)) != NULL) {
+      bson_snprintf (filepath, PATH_MAX, "%s/%s", path, dp->d_name);
+      if (stat(filepath, &sb) == 0 && S_ISREG (sb.st_mode)) {
+         if (remove (filepath)) {
+            perror ("remove");
+            abort ();
+         }
+      }
+   }
+
+   closedir(dirp);
+}
 
 
 void
@@ -106,6 +140,16 @@ write_one_byte_file (mongoc_gridfs_t *gridfs)
 
    mongoc_gridfs_file_save (file);
    mongoc_gridfs_file_destroy (file);
+}
+
+void 
+run_test_as_utility (perf_test_t *test)
+{
+   test->setup (test);
+   test->before (test);
+   test->task (test);
+   test->after (test);
+   test->teardown (test);
 }
 
 

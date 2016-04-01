@@ -286,11 +286,265 @@ multi_upload_perf_new (void)
 }
 
 
+
+/*
+ *  -------- GRIDFS MULTI-FILE DOWNLOAD BENCHMARK -------------------------------
+ */
+
+typedef struct
+{
+   char            *filename;
+   char            *path;
+   pthread_t        thread;
+   mongoc_client_t *client;
+   mongoc_stream_t *stream;
+   mongoc_gridfs_t *gridfs;
+} multi_download_thread_context_t;
+
+typedef struct
+{
+   perf_test_t                      base;
+   mongoc_client_pool_t            *pool;
+   int                              cnt;
+   multi_download_thread_context_t *contexts;
+} multi_download_test_t;
+
+
+static void
+_setup_load_gridfs_files (void)
+{
+   perf_test_t *upload_test;
+
+   /* upload all the files */
+   upload_test = multi_upload_perf_new ();
+   run_test_as_utility (upload_test);
+   bson_free (upload_test);
+}
+
+
+static void
+multi_download_setup (perf_test_t *test)
+{
+   multi_download_test_t *download_test;
+   multi_download_thread_context_t *ctx;
+   mongoc_uri_t *uri;
+   int i;
+
+   _setup_load_gridfs_files ();
+   perf_test_setup (test);
+
+   download_test = (multi_download_test_t *) test;
+   uri = mongoc_uri_new (NULL);
+   download_test->pool = mongoc_client_pool_new (uri);
+
+   download_test->cnt = 50; /* DANGER!: assumes test corpus won't change */
+   download_test->contexts = (multi_download_thread_context_t *) bson_malloc0 (
+      download_test->cnt * sizeof (multi_download_thread_context_t));
+
+   for (i = 0; i < download_test->cnt; i++) {
+      ctx = &download_test->contexts[i];
+      ctx->filename = bson_strdup_printf ("file%d.txt", i);
+      ctx->path = bson_strdup_printf ("%s/%s", test->data_path, ctx->filename);
+   }
+
+   mongoc_uri_destroy (uri);
+}
+
+
+static void
+multi_download_before (perf_test_t *test)
+{
+   multi_download_test_t *download_test;
+   bson_error_t error;
+   multi_download_thread_context_t *ctx;
+   int i;
+
+   perf_test_before (test);
+   prep_tmp_dir (test->data_path);
+
+   download_test = (multi_download_test_t *) test;
+
+   for (i = 0; i < download_test->cnt; i++) {
+      ctx = &download_test->contexts[i];
+      ctx->client = mongoc_client_pool_pop (download_test->pool);
+      ctx->gridfs = mongoc_client_get_gridfs (ctx->client, "perftest",
+                                              NULL, &error);
+
+      if (!ctx->gridfs) {
+         MONGOC_ERROR ("get_gridfs: %s\n", error.message);
+         abort ();
+      }
+   }
+}
+
+
+/* a little bigger than actual gridfs default buffer size 255k */
+#define BUF_SZ 256 * 1024
+
+
+static void *
+_multi_download_thread (void *p)
+{
+   multi_download_thread_context_t *ctx;
+   FILE *fp;
+   mongoc_gridfs_file_t *file;
+   bson_error_t error;
+   char buf[BUF_SZ];
+   mongoc_iovec_t iov;
+   ssize_t sz;
+
+   ctx = (multi_download_thread_context_t *) p;
+
+   fp = fopen (ctx->path, "w+");
+   if (!fp) {
+      perror ("fopen");
+      abort ();
+   }
+
+   file = mongoc_gridfs_find_one_by_filename (ctx->gridfs,
+                                              ctx->filename,
+                                              &error);
+
+   if (!file) {
+      MONGOC_ERROR ("find_one_by_filename: %s\n", error.message);
+      abort ();
+   }
+
+   iov.iov_base = &buf;
+   iov.iov_len = BUF_SZ;
+
+   for (;;) {
+      /* a 255k chunk at a time */
+      sz = mongoc_gridfs_file_readv (file,
+                                     &iov,
+                                     1, /* iov count */
+                                     1, /* min bytes */
+                                     0  /* timeout   */);
+
+      if (!sz) {
+         break;
+      }
+
+      assert (sz > 0);
+      fwrite (iov.iov_base, sizeof (char), (size_t) sz, fp);
+   }
+
+   if (mongoc_gridfs_file_error (file, &error)) {
+      MONGOC_ERROR ("gridfs_file_readv: %s\n", error.message);
+      abort ();
+   }
+
+   mongoc_gridfs_file_destroy (file);
+   fclose (fp);
+
+   return (void *) 1;
+}
+
+
+static void
+multi_download_task (perf_test_t *test)
+{
+   multi_download_test_t *download_test;
+   multi_download_thread_context_t *ctx;
+   int i;
+   void *r;
+
+   download_test = (multi_download_test_t *) test;
+
+   for (i = 0; i < download_test->cnt; i++) {
+      ctx = &download_test->contexts[i];
+      pthread_create (&ctx->thread, NULL, _multi_download_thread, (void *) ctx);
+   }
+
+   for (i = 0; i < download_test->cnt; i++) {
+      if (pthread_join (download_test->contexts[i].thread, &r)) {
+         perror ("pthread_join");
+         abort ();
+      }
+
+      if ((int) r != 1) {
+         MONGOC_ERROR ("download_thread returned %d\n", (int) r);
+         abort ();
+      }
+   }
+}
+
+
+static void
+multi_download_after (perf_test_t *test)
+{
+   multi_download_test_t *download_test;
+   multi_download_thread_context_t *ctx;
+   int i;
+
+   download_test = (multi_download_test_t *) test;
+
+   for (i = 0; i < download_test->cnt; i++) {
+      /* ctx->stream was destroyed by mongoc_gridfs_create_file_from_stream */
+      ctx = &download_test->contexts[i];
+      mongoc_gridfs_destroy (ctx->gridfs);
+      mongoc_client_pool_push (download_test->pool, ctx->client);
+   }
+
+   perf_test_after (test);
+}
+
+
+static void
+multi_download_teardown (perf_test_t *test)
+{
+   multi_download_test_t *download_test;
+   multi_download_thread_context_t *ctx;
+   int i;
+
+   download_test = (multi_download_test_t *) test;
+
+   for (i = 0; i < download_test->cnt; i++) {
+      ctx = &download_test->contexts[i];
+      bson_free (ctx->filename);
+      bson_free (ctx->path);
+   }
+
+   bson_free (download_test->contexts);
+   mongoc_client_pool_destroy (download_test->pool);
+
+   perf_test_teardown (test);
+}
+
+
+static void
+multi_download_init (multi_download_test_t *download_test)
+{
+   perf_test_init (&download_test->base,
+                   "TestGridFsMultiFileDownload",
+                   "/tmp/TestGridFsMultiFileDownload");
+   download_test->base.setup = multi_download_setup;
+   download_test->base.before = multi_download_before;
+   download_test->base.task = multi_download_task;
+   download_test->base.after = multi_download_after;
+   download_test->base.teardown = multi_download_teardown;
+}
+
+
+static perf_test_t *
+multi_download_perf_new (void)
+{
+   multi_download_test_t *download_test;
+
+   download_test = (multi_download_test_t *) bson_malloc0 (
+      sizeof (multi_download_test_t));
+   multi_download_init (download_test);
+
+   return (perf_test_t *) download_test;
+}
+
+
 void
 gridfs_parallel_perf (void)
 {
    perf_test_t *tests[] = {
       multi_upload_perf_new (),
+      multi_download_perf_new (),
       NULL,
    };
 

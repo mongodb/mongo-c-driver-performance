@@ -55,20 +55,23 @@ struct _perf_test_t {
    perf_callback_t   teardown;
 };
 
-void        parse_args          (int            argc,
-                                 char         **argv);
-const char *get_ext             (const char    *filename);
-void        read_json_file      (const char    *data_path,
-                                 bson_t        *bson);
+
+void        prep_tmp_dir        (const char      *path);
+void        parse_args          (int              argc,
+                                 char           **argv);
+const char *get_ext             (const char      *filename);
+void        read_json_file      (const char      *data_path,
+                                 bson_t          *bson);
 void        write_one_byte_file (mongoc_gridfs_t *gridfs);
-void        perf_test_init      (perf_test_t   *test,
-                                 const char    *name,
-                                 const char    *data_path);
-void        perf_test_teardown  (perf_test_t   *test);
-void        perf_test_setup     (perf_test_t   *test);
-void        perf_test_before    (perf_test_t   *test);
-void        perf_test_task      (perf_test_t   *test);
-void        perf_test_after     (perf_test_t   *test);
-void        run_perf_tests      (perf_test_t  **tests);
+void        run_test_as_utility (perf_test_t     *test);
+void        perf_test_init      (perf_test_t     *test,
+                                 const char      *name,
+                                 const char      *data_path);
+void        perf_test_teardown  (perf_test_t     *test);
+void        perf_test_setup     (perf_test_t     *test);
+void        perf_test_before    (perf_test_t     *test);
+void        perf_test_task      (perf_test_t     *test);
+void        perf_test_after     (perf_test_t     *test);
+void        run_perf_tests      (perf_test_t    **tests);
 
 #endif //MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H

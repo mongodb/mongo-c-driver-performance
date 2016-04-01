@@ -60,7 +60,6 @@ import_setup (perf_test_t *test)
    perf_test_setup (test);
 
    import_test = (import_test_t *) test;
-   import_test->add_file_id = false;
 
    uri = mongoc_uri_new (NULL);
    import_test->pool = mongoc_client_pool_new (uri);
@@ -335,47 +334,9 @@ _setup_load_docs (void)
 
    /* insert all the documents, with a "file" field */
    import = import_perf_new ();
-   import->setup (import);
    ((import_test_t *) import)->add_file_id = true;
-   import->before (import);
-   import->task (import);
-   import->after (import);
-   import->teardown (import);
+   run_test_as_utility (import);
    bson_free (import);
-}
-
-#define TMP_DIR "/tmp/TestJsonMultiExport"
-
-static void
-_prep_dir (void)
-{
-   DIR *dirp;
-   struct dirent *dp;
-   char filepath[PATH_MAX];
-   struct stat sb;
-
-   if (mkdir (TMP_DIR, S_IRWXU) < 0 && errno != EEXIST) {
-      perror ("create " TMP_DIR);
-      abort ();
-   }
-
-   dirp = opendir (TMP_DIR);
-   if (!dirp) {
-      perror ("opening data path");
-      abort ();
-   }
-
-   while ((dp = readdir(dirp)) != NULL) {
-      bson_snprintf (filepath, PATH_MAX, "%s/%s", TMP_DIR, dp->d_name);
-      if (stat(filepath, &sb) == 0 && S_ISREG (sb.st_mode)) {
-         if (remove (filepath)) {
-            perror ("remove");
-            abort ();
-         }
-      }
-   }
-
-   closedir(dirp);
 }
 
 
@@ -402,7 +363,7 @@ export_before (perf_test_t *test)
 {
    export_test_t *export_test;
 
-   _prep_dir ();
+   prep_tmp_dir (test->data_path);
    perf_test_before (test);
 
    export_test = (export_test_t *) test;
@@ -432,7 +393,7 @@ _export_thread (void *p)
 
    /* these filenames are 1-indexed */
    bson_snprintf (filename, PATH_MAX, "LDJSON%03d.txt", ctx->offset + 1);
-   bson_snprintf (path, PATH_MAX, "%s/%s", TMP_DIR, filename);
+   bson_snprintf (path, PATH_MAX, "/tmp/TestJsonMultiExport/%s", filename);
    fp = fopen (path, "w+");
    if (!fp) {
       perror ("fopen");
@@ -536,7 +497,7 @@ export_init (export_test_t *export_test)
 {
    perf_test_init (&export_test->base,
                    "TestJsonMultiExport",
-                   "PARALLEL/LDJSON_MULTI");
+                   "/tmp/TestJsonMultiExport");
    export_test->base.setup = export_setup;
    export_test->base.before = export_before;
    export_test->base.task = export_task;
