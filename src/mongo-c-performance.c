@@ -36,6 +36,20 @@ parse_args (int    argc,
 }
 
 
+const char *
+get_ext (const char *filename)
+{
+   const char *dot;
+
+   dot = strrchr (filename, '.');
+   if (!dot || dot == filename) {
+      return "";
+   }
+
+   return dot + 1;
+}
+
+
 void
 read_json_file (const char *data_path,
                 bson_t     *bson)
@@ -66,6 +80,32 @@ read_json_file (const char *data_path,
 
    bson_json_reader_destroy (reader);
    bson_free (path);
+}
+
+void
+write_one_byte_file (mongoc_gridfs_t *gridfs)
+{
+   mongoc_gridfs_file_t *file;
+   char c = '\0';
+   mongoc_iovec_t iov;
+   bson_error_t error;
+
+   /* write 1-byte file */
+   file = mongoc_gridfs_create_file (gridfs, NULL);
+   iov.iov_base = (void *) &c;
+   iov.iov_len = 1;
+   if (1 != mongoc_gridfs_file_writev (file, &iov, 1, 0)) {
+      if (mongoc_gridfs_file_error (file, &error)) {
+         MONGOC_ERROR ("file_writev: %s\n", error.message);
+      } else {
+         MONGOC_ERROR ("file_writev: unknown error\n");
+      }
+
+      abort ();
+   }
+
+   mongoc_gridfs_file_save (file);
+   mongoc_gridfs_file_destroy (file);
 }
 
 

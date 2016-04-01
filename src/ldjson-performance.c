@@ -44,20 +44,6 @@ typedef struct {
 } import_thread_context_t;
 
 
-static const char *
-get_ext (const char *filename)
-{
-   const char *dot;
-
-   dot = strrchr (filename, '.');
-   if (!dot || dot == filename) {
-      return "";
-   }
-
-   return dot + 1;
-}
-
-
 static void
 import_setup (perf_test_t *test)
 {

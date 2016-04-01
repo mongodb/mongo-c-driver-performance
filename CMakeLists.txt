@@ -27,6 +27,7 @@ set(SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/src/mongo-c-performance.c
     ${CMAKE_SOURCE_DIR}/src/driver-performance.c
     ${CMAKE_SOURCE_DIR}/src/gridfs-performance.c
+    ${CMAKE_SOURCE_DIR}/src/gridfs-parallel-performance.c
     ${CMAKE_SOURCE_DIR}/src/ldjson-performance.c
 )
 

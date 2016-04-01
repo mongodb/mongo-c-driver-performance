@@ -172,23 +172,7 @@ upload_before (perf_test_t *test)
    gridfs_test = (upload_test_t *) test;
    _drop_database (gridfs_test);
    _init_gridfs (gridfs_test);
-
-   /* write 1-byte file */
-   file = mongoc_gridfs_create_file (gridfs_test->gridfs, NULL);
-   iov.iov_base = (void *) &c;
-   iov.iov_len = 1;
-   if (1 != mongoc_gridfs_file_writev (file, &iov, 1, 0)) {
-      if (mongoc_gridfs_file_error (file, &error)) {
-         MONGOC_ERROR ("file_writev: %s\n", error.message);
-      } else {
-         MONGOC_ERROR ("file_writev: unknown error\n");
-      }
-
-      abort ();
-   }
-
-   mongoc_gridfs_file_save (file);
-   mongoc_gridfs_file_destroy (file);
+   write_one_byte_file (gridfs_test->gridfs);
 }
 
 static void

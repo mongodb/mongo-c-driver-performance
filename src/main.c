@@ -19,10 +19,11 @@
 #include <bson.h>
 #include <mongoc.h>
 
-extern void bson_perf     (void);
-extern void driver_perf   (void);
-extern void gridfs_perf   (void);
-extern void parallel_perf (void);
+extern void bson_perf            (void);
+extern void driver_perf          (void);
+extern void gridfs_perf          (void);
+extern void parallel_perf        (void);
+extern void gridfs_parallel_perf (void);
 
 int
 main (int    argc,
@@ -36,6 +37,7 @@ main (int    argc,
    driver_perf ();
    gridfs_perf ();
    parallel_perf ();
+   gridfs_parallel_perf ();
 
    mongoc_cleanup ();
 }
