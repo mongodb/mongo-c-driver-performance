@@ -410,7 +410,7 @@ _multi_download_thread (void *p)
       abort ();
    }
 
-   iov.iov_base = &buf;
+   iov.iov_base = buf;
    iov.iov_len = BUF_SZ;
 
    for (;;) {

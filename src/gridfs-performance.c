@@ -162,10 +162,6 @@ static void
 upload_before (perf_test_t *test)
 {
    upload_test_t *gridfs_test;
-   mongoc_gridfs_file_t *file;
-   char c = '\0';
-   mongoc_iovec_t iov;
-   bson_error_t error;
 
    perf_test_before (test);
 
