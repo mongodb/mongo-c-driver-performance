@@ -21,8 +21,10 @@
 #include <dirent.h>
 
 
-const int NUM_ITERATIONS        = 1;
-const int NUM_DOCS            = 1;
+const int NUM_ITERATIONS        = 100;
+const int NUM_DOCS            = 10000;
+const int MIN_TIME_USEC       = 1 * 60 * 1000 * 1000;
+const int MAX_TIME_USEC       = 5 * 60 * 1000 * 1000;
 
 static int    g_num_tests;
 static char **g_test_names;
@@ -239,8 +241,9 @@ run_perf_tests (perf_test_t **tests)
    perf_test_t *test;
    int64_t *results;
    int test_idx;
-   int i;
-   int64_t start;
+   size_t i;
+   int64_t task_start;
+   int64_t total_time;
    double median;
 
    results = bson_malloc (NUM_ITERATIONS * sizeof (int64_t));
@@ -251,18 +254,24 @@ run_perf_tests (perf_test_t **tests)
       if (should_run_test (test->name)) {
          test->setup (test);
 
-         for (i = 0; i < NUM_ITERATIONS; i++) {
+         /* run at least 1 min, stop at 100 loops or 5 mins, whichever first */
+         total_time = 0;
+         for (i = 0;
+              total_time < MIN_TIME_USEC ||
+                 (i < NUM_ITERATIONS && total_time < MAX_TIME_USEC);
+              i++)
+         {
             test->before (test);
 
-            start = bson_get_monotonic_time ();
+            task_start = bson_get_monotonic_time ();
             test->task (test);
-            results[i] = bson_get_monotonic_time () - start;
+            total_time += results[i] = bson_get_monotonic_time () - task_start;
 
             test->after (test);
          }
 
-         qsort ((void *) results, NUM_ITERATIONS, sizeof (int64_t), cmp);
-         median = (double) (results[NUM_ITERATIONS / 2 - 1]) / 1e6;
+         qsort ((void *) results, i, sizeof (int64_t), cmp);
+         median = (double) (results[i / 2 - 1]) / 1e6;
          printf ("%25s, %f\n", test->name, median);
 
          test->teardown (test);
