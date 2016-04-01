@@ -3,6 +3,8 @@ project(mongo-c-performance)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/")
 
+find_package (Threads)
+
 set(LIBBSON_REQUIRED_VERSION 1.3.4)
 set(LIBBSON_REQUIRED_ABI_VERSION 1.0)
 find_package(LibBSON ${LIBBSON_REQUIRED_VERSION} REQUIRED)
@@ -32,4 +34,8 @@ set(SOURCE_FILES
 )
 
 add_executable(mongo-c-performance ${SOURCE_FILES})
-target_link_libraries(mongo-c-performance mongoc-1.0 bson-1.0)
+target_link_libraries(
+        mongo-c-performance
+        mongoc-1.0 bson-1.0
+        ${CMAKE_THREAD_LIBS_INIT}
+)
