@@ -240,13 +240,15 @@ run_perf_tests (perf_test_t **tests)
 {
    perf_test_t *test;
    int64_t *results;
+   size_t results_sz;
    int test_idx;
    size_t i;
    int64_t task_start;
    int64_t total_time;
    double median;
 
-   results = bson_malloc (NUM_ITERATIONS * sizeof (int64_t));
+   results_sz = NUM_ITERATIONS;
+   results = bson_malloc (results_sz * sizeof (int64_t));
 
    test_idx = 0;
    while (tests[test_idx]) {
@@ -261,6 +263,11 @@ run_perf_tests (perf_test_t **tests)
                  (i < NUM_ITERATIONS && total_time < MAX_TIME_USEC);
               i++)
          {
+            if (i >= results_sz) {
+               results_sz *= 2;
+               results = realloc (results, results_sz * sizeof (int64_t));
+            }
+
             test->before (test);
 
             task_start = bson_get_monotonic_time ();
