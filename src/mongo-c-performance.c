@@ -245,6 +245,7 @@ run_perf_tests (perf_test_t **tests)
    size_t i;
    int64_t task_start;
    int64_t total_time;
+   int median_idx;
    double median;
 
    results_sz = NUM_ITERATIONS;
@@ -278,8 +279,10 @@ run_perf_tests (perf_test_t **tests)
          }
 
          qsort ((void *) results, i, sizeof (int64_t), cmp);
-         median = (double) (results[i / 2 - 1]) / 1e6;
-         printf ("%25s, %f\n", test->name, median);
+         median_idx = BSON_MAX(BSON_MIN(0, (int) i / 2 - 1), (int) i - 1);
+         median = (double) (results[median_idx]) / 1e6;
+         printf ("%25s, %f, %zu, %2.2f\n",
+                 test->name, median, i, total_time / 1e6);
 
          test->teardown (test);
       }
