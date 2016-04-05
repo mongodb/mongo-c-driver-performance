@@ -33,6 +33,8 @@ main (int    argc,
 
    parse_args (argc, argv);
 
+   print_header ();
+
    bson_perf ();
    driver_perf ();
    gridfs_perf ();

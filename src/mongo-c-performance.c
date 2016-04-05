@@ -236,6 +236,13 @@ perf_test_init (perf_test_t *test,
 
 
 void
+print_header (void)
+{
+   printf ("%25s, median, iters, total\n", "name");
+}
+
+
+void
 run_perf_tests (perf_test_t **tests)
 {
    perf_test_t *test;

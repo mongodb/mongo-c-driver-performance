@@ -56,6 +56,7 @@ void        perf_test_setup     (perf_test_t     *test);
 void        perf_test_before    (perf_test_t     *test);
 void        perf_test_task      (perf_test_t     *test);
 void        perf_test_after     (perf_test_t     *test);
+void        print_header        (void);
 void        run_perf_tests      (perf_test_t    **tests);
 
 #endif //MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
