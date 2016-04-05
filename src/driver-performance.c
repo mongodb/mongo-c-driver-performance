@@ -478,6 +478,7 @@ find_many_init (find_many_test_t *find_many_test)
                     "TestFindManyAndEmptyCursor",
                     "SINGLE_DOCUMENT/TWEET.json");
    find_many_test->base.base.setup = find_many_setup;
+   find_many_test->base.base.before = perf_test_before;  /* no "before" */
    find_many_test->base.base.task = find_many_task;
 }
 
