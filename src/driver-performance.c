@@ -502,7 +502,6 @@ find_many_new (void)
 /* base for test_bulk_insert_small_doc / large_doc */
 typedef struct {
    single_doc_test_t   base;
-   bson_t            **docs;
    int                 num_docs;
 } bulk_insert_test_t;
 
@@ -511,16 +510,11 @@ _bulk_insert_setup (perf_test_t *test,
                     int          num_docs)
 {
    bulk_insert_test_t *driver_test;
-   int i;
 
    single_doc_setup (test);
 
    driver_test = (bulk_insert_test_t *) test;
    driver_test->num_docs = num_docs;
-   driver_test->docs = (bson_t **) bson_malloc (num_docs * sizeof (bson_t *));
-   for (i = 0; i < num_docs; i++) {
-      driver_test->docs[i] = &driver_test->base.doc;
-   }
 }
 
 static void
@@ -529,30 +523,23 @@ bulk_insert_task (perf_test_t *test)
    bulk_insert_test_t *driver_test;
    bson_error_t error;
    uint32_t num_docs;
+   mongoc_bulk_operation_t *bulk;
+   int i;
 
    driver_test = (bulk_insert_test_t *) test;
    num_docs = (uint32_t) driver_test->num_docs;
 
-BEGIN_IGNORE_DEPRECATIONS
-   if (!mongoc_collection_insert_bulk (driver_test->base.base.collection,
-                                       MONGOC_INSERT_NONE,
-                                       (const bson_t **) driver_test->docs,
-                                       num_docs, NULL, &error)) {
+   bulk = mongoc_collection_create_bulk_operation (
+      driver_test->base.base.collection, false, NULL);
+
+   for (i = 0; i < num_docs; i++) {
+      mongoc_bulk_operation_insert (bulk, &driver_test->base.doc);
+   }
+
+   if (!mongoc_bulk_operation_execute (bulk, NULL, &error)) {
       MONGOC_ERROR ("insert_bulk: %s\n", error.message);
       abort ();
    }
-END_IGNORE_DEPRECATIONS
-}
-
-static void
-bulk_insert_teardown (perf_test_t *test)
-{
-   bulk_insert_test_t *driver_test;
-
-   driver_test = (bulk_insert_test_t *) test;
-   bson_free (driver_test->docs);
-
-   single_doc_teardown (test);
 }
 
 static void
@@ -562,7 +549,6 @@ bulk_insert_init (bulk_insert_test_t *bulk_insert_test,
 {
    single_doc_init (&bulk_insert_test->base, name, data_path);
    bulk_insert_test->base.base.base.task = bulk_insert_task;
-   bulk_insert_test->base.base.base.teardown = bulk_insert_teardown;
 }
 
 static void
