@@ -34,5 +34,14 @@ Or run specific benchmarks:
 ./mongo-c-performance test-data-dir TestFlatEncoding TestDeepEncoding
 ```
 
-The output is comma-separated values. The first column is the test name, the
-second is its median duration in seconds.
+The output is comma-separated values:
+
+```
+name, median, iters, total
+```
+
+The first column is the test name, the second is its median duration in seconds.
+
+The program runs each test for at least a minute, and runs it 100 times or five
+minutes, whichever comes first. The third and fourth columns are informational:
+how many iterations the test ran and the time spent running all iterations.
