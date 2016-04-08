@@ -63,7 +63,7 @@ multi_upload_setup (perf_test_t *test)
    uri = mongoc_uri_new (NULL);
    upload_test->pool = mongoc_client_pool_new (uri);
 
-   data_dir = bson_strdup_printf ("performance-testdata/%s", test->data_path);
+   data_dir = bson_strdup_printf ("%s/%s", g_test_dir, test->data_path);
    dirp = opendir(data_dir);
    if (!dirp) {
       perror ("opening data path");
@@ -90,7 +90,7 @@ multi_upload_setup (perf_test_t *test)
          ctx = &upload_test->contexts[i];
          ctx->filename = bson_strdup (dp->d_name);
          ctx->path = bson_strdup_printf (
-            "performance-testdata/%s/%s", test->data_path, dp->d_name);
+            "%s/%s/%s", g_test_dir, test->data_path, dp->d_name);
 
          ++i;
       }

@@ -26,6 +26,7 @@ const int NUM_DOCS            = 10000;
 const int MIN_TIME_USEC       = 1 * 60 * 1000 * 1000;
 const int MAX_TIME_USEC       = 5 * 60 * 1000 * 1000;
 
+char         *g_test_dir;
 static int    g_num_tests;
 static char **g_test_names;
 
@@ -67,8 +68,14 @@ void
 parse_args (int    argc,
             char **argv)
 {
-   g_num_tests = argc - 1;
-   g_test_names = g_num_tests ? &argv[1] : NULL;
+   if (argc < 2) {
+      fprintf (stderr, "USAGE: mongo-c-performance TEST_DIR [TEST_NAME ...]");
+      exit (1);
+   }
+
+   g_test_dir = argv[1];
+   g_num_tests = argc - 2;
+   g_test_names = g_num_tests ? &argv[2] : NULL;
 }
 
 
@@ -95,7 +102,7 @@ read_json_file (const char *data_path,
    bson_error_t error;
    int r;
 
-   path = bson_strdup_printf ("performance-testdata/%s", data_path);
+   path = bson_strdup_printf ("%s/%s", g_test_dir, data_path);
    reader = bson_json_reader_new_from_file (path, &error);
    if (!reader) {
       MONGOC_ERROR ("%s: %s\n", path, error.message);

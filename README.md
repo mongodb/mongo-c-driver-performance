@@ -13,8 +13,8 @@ Install libbson and libmongoc according to their instructions:
 ## Test data
 
 The test data for the MongoDB driver performance benchmarks will be uploaded to
-a public location; for now, download it from the corporate Google Drive to the
-`performance-testdata` directory.
+a public location; for now, download it from the corporate Google Drive to a
+local directory.
 
 ## Build
 
@@ -22,11 +22,16 @@ Build the `mongo-c-performance` executable with [CMake](https://cmake.org/).
 
 ## Run
 
-Run `mongo-c-performance` in the source directory (the directory containing
-`performance-testdata`):
+Run `mongo-c-performance` and pass the test data path:
 
 ```
-./mongo-c-performance
+./mongo-c-performance test-data-dir
+```
+
+Or run specific benchmarks:
+
+```
+./mongo-c-performance test-data-dir TestFlatEncoding TestDeepEncoding
 ```
 
 The output is comma-separated values. The first column is the test name, the

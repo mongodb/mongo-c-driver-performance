@@ -99,6 +99,7 @@ _upload_big_file (gridfs_test_t *gridfs_test,
 static void
 gridfs_setup (perf_test_t *test)
 {
+   char *path;
    gridfs_test_t *gridfs_test;
    FILE *fp;
 
@@ -107,7 +108,8 @@ gridfs_setup (perf_test_t *test)
    gridfs_test = (gridfs_test_t *) test;
    gridfs_test->client = mongoc_client_new (NULL);
 
-   fp = fopen ("performance-testdata/SINGLE_DOCUMENT/GRIDFS_LARGE", "rb");
+   path = bson_strdup_printf ("%s/SINGLE_DOCUMENT/GRIDFS_LARGE", g_test_dir);
+   fp = fopen (path, "rb");
    if (!fp) {
       perror ("cannot open GRIDFS_LARGE");
       abort ();
@@ -127,6 +129,8 @@ gridfs_setup (perf_test_t *test)
    assert (gridfs_test->data);
    assert (gridfs_test->data_sz ==
            fread (gridfs_test->data, 1, gridfs_test->data_sz, fp));
+
+   bson_free (path);
 }
 
 static void

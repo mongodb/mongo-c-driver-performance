@@ -22,8 +22,9 @@
 #include <mongoc.h>
 
 
-const int NUM_ITERATIONS;
-const int NUM_DOCS;
+const int  NUM_ITERATIONS;
+const int  NUM_DOCS;
+char      *g_test_dir;
 
 typedef struct _perf_test_t perf_test_t;
 

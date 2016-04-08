@@ -71,7 +71,7 @@ import_setup (perf_test_t *test)
       abort ();
    }
 
-   data_dir = bson_strdup_printf ("performance-testdata/%s", test->data_path);
+   data_dir = bson_strdup_printf ("%s/%s", g_test_dir, test->data_path);
    dirp = opendir(data_dir);
    if (!dirp) {
       perror ("opening data path");
@@ -96,7 +96,7 @@ import_setup (perf_test_t *test)
       if (!strcmp (get_ext (dp->d_name), "txt")) {
          import_test->filenames[i] = bson_strdup (dp->d_name);
          import_test->paths[i] = bson_strdup_printf (
-            "performance-testdata/%s/%s", test->data_path, dp->d_name);
+            "%s/%s/%s", g_test_dir, test->data_path, dp->d_name);
 
          ++i;
       }
