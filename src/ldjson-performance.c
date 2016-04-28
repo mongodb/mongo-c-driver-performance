@@ -238,8 +238,8 @@ import_task (perf_test_t *test)
          abort ();
       }
 
-      if ((int) r != 1) {
-         MONGOC_ERROR ("import_thread returned %d\n", (int) r);
+      if ((intptr_t) r != 1) {
+         MONGOC_ERROR ("import_thread returned %p\n", r);
          abort ();
       }
    }
@@ -458,8 +458,8 @@ export_task (perf_test_t *test)
          abort ();
       }
 
-      if ((int) r != 1) {
-         MONGOC_ERROR ("export_thread returned %d\n", (int) r);
+      if ((intptr_t) r != 1) {
+         MONGOC_ERROR ("export_thread returned %p\n", r);
          abort ();
       }
    }

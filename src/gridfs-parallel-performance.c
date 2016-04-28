@@ -210,8 +210,8 @@ multi_upload_task (perf_test_t *test)
          abort ();
       }
 
-      if ((int) r != 1) {
-         MONGOC_ERROR ("upload_thread returned %d\n", (int) r);
+      if ((intptr_t) r != 1) {
+         MONGOC_ERROR ("upload_thread returned %p\n", r);
          abort ();
       }
    }
@@ -462,8 +462,8 @@ multi_download_task (perf_test_t *test)
          abort ();
       }
 
-      if ((int) r != 1) {
-         MONGOC_ERROR ("download_thread returned %d\n", (int) r);
+      if ((intptr_t) r != 1) {
+         MONGOC_ERROR ("download_thread returned %p\n", r);
          abort ();
       }
    }
