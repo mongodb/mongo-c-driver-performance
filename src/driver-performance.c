@@ -561,8 +561,8 @@ static void
 bulk_insert_small_init (bulk_insert_test_t *bulk_insert_test)
 {
    bulk_insert_init (bulk_insert_test,
-                    "TestSmallDocBulkInsert",
-                    "SINGLE_DOCUMENT/SMALL_DOC.json");
+                     "TestSmallDocBulkInsert",
+                     "SINGLE_DOCUMENT/SMALL_DOC.json");
    bulk_insert_test->base.base.base.setup = bulk_insert_small_doc_setup;
 }
 
