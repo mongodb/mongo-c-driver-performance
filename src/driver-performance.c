@@ -458,7 +458,7 @@ find_many_task (perf_test_t *test)
    driver_test = (single_doc_test_t *) test;
    cursor = mongoc_collection_find (driver_test->base.collection,
                                     MONGOC_QUERY_NONE,
-                                    0, 1, 0, &query, NULL, NULL);
+                                    0, 0, 0, &query, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
    }
