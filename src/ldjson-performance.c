@@ -288,7 +288,7 @@ import_init (import_test_t *import_test)
 {
    perf_test_init (&import_test->base,
                    "TestJsonMultiImport",
-                   "PARALLEL/LDJSON_MULTI");
+                   "parallel/ldjson_multi");
    import_test->base.setup = import_setup;
    import_test->base.before = import_before;
    import_test->base.task = import_task;
@@ -392,7 +392,7 @@ _export_thread (void *p)
    ctx = (export_thread_context_t *) p;
 
    /* these filenames are 1-indexed */
-   bson_snprintf (filename, PATH_MAX, "LDJSON%03d.txt", ctx->offset + 1);
+   bson_snprintf (filename, PATH_MAX, "ldjson%03d.txt", ctx->offset + 1);
    bson_snprintf (path, PATH_MAX, "/tmp/TestJsonMultiExport/%s", filename);
    fp = fopen (path, "w+");
    if (!fp) {

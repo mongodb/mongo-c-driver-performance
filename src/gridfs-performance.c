@@ -108,7 +108,7 @@ gridfs_setup (perf_test_t *test)
    gridfs_test = (gridfs_test_t *) test;
    gridfs_test->client = mongoc_client_new (NULL);
 
-   path = bson_strdup_printf ("%s/SINGLE_DOCUMENT/GRIDFS_LARGE", g_test_dir);
+   path = bson_strdup_printf ("%s/single_and_multi_document/gridfs_large.bin", g_test_dir);
    fp = fopen (path, "rb");
    if (!fp) {
       perror ("cannot open GRIDFS_LARGE");

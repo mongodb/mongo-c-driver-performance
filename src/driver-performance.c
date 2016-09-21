@@ -237,7 +237,7 @@ find_one_init (find_one_test_t *find_one_test)
 {
    driver_test_init (find_one_test,
                      "TestFindOneByID",
-                     "SINGLE_DOCUMENT/TWEET.json");
+                     "single_and_multi_document/tweet.json");
    find_one_test->base.setup = find_one_setup;
    find_one_test->base.task = find_one_task;
 }
@@ -363,7 +363,7 @@ small_doc_init (small_doc_test_t *small_doc_test)
 {
    single_doc_init (small_doc_test,
                     "TestSmallDocInsertOne",
-                    "SINGLE_DOCUMENT/SMALL_DOC.json");
+                    "single_and_multi_document/small_doc.json");
    small_doc_test->base.base.task = small_doc_task;
 }
 
@@ -397,7 +397,7 @@ large_doc_init (large_doc_test_t *large_doc_test)
 {
    single_doc_init (large_doc_test,
                     "TestLargeDocInsertOne",
-                    "SINGLE_DOCUMENT/LARGE_DOC.json");
+                    "single_and_multi_document/large_doc.json");
    large_doc_test->base.base.task = large_doc_task;
 }
 
@@ -476,7 +476,7 @@ find_many_init (find_many_test_t *find_many_test)
 {
    single_doc_init (find_many_test,
                     "TestFindManyAndEmptyCursor",
-                    "SINGLE_DOCUMENT/TWEET.json");
+                    "single_and_multi_document/tweet.json");
    find_many_test->base.base.setup = find_many_setup;
    find_many_test->base.base.before = perf_test_before;  /* no "before" */
    find_many_test->base.base.task = find_many_task;
@@ -562,7 +562,7 @@ bulk_insert_small_init (bulk_insert_test_t *bulk_insert_test)
 {
    bulk_insert_init (bulk_insert_test,
                      "TestSmallDocBulkInsert",
-                     "SINGLE_DOCUMENT/SMALL_DOC.json");
+                     "single_and_multi_document/small_doc.json");
    bulk_insert_test->base.base.base.setup = bulk_insert_small_doc_setup;
 }
 
@@ -589,7 +589,7 @@ bulk_insert_large_init (bulk_insert_test_t *bulk_insert_test)
 {
    bulk_insert_init (bulk_insert_test,
                      "TestLargeDocBulkInsert",
-                     "SINGLE_DOCUMENT/LARGE_DOC.json");
+                     "single_and_multi_document/large_doc.json");
    bulk_insert_test->base.base.base.setup = bulk_insert_large_doc_setup;
 }
 

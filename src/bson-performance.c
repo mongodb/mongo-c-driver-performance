@@ -130,13 +130,13 @@ bson_perf (void)
 {
    /* other drivers' idea of encoding vs decoding doesn't apply to libbson */
    perf_test_t *tests[] = {
-      bson_perf_new ("TestFlatEncoding", "EXTENDED_BSON/flat_bson.json"),
-      bson_perf_new ("TestDeepEncoding", "EXTENDED_BSON/deep_bson.json"),
-      bson_perf_new ("TestFullEncoding", "EXTENDED_BSON/full_bson.json"),
+      bson_perf_new ("TestFlatEncoding", "extended_bson/flat_bson.json"),
+      bson_perf_new ("TestDeepEncoding", "extended_bson/deep_bson.json"),
+      bson_perf_new ("TestFullEncoding", "extended_bson/full_bson.json"),
 
-      bson_perf_new ("TestFlatDecoding", "EXTENDED_BSON/flat_bson.json"),
-      bson_perf_new ("TestDeepDecoding", "EXTENDED_BSON/deep_bson.json"),
-      bson_perf_new ("TestFullDecoding", "EXTENDED_BSON/full_bson.json"),
+      bson_perf_new ("TestFlatDecoding", "extended_bson/flat_bson.json"),
+      bson_perf_new ("TestDeepDecoding", "extended_bson/deep_bson.json"),
+      bson_perf_new ("TestFullDecoding", "extended_bson/full_bson.json"),
       NULL,
    };
 
