@@ -24,13 +24,13 @@ Build the `mongo-c-performance` executable with [CMake](https://cmake.org/).
 Run `mongo-c-performance` and pass the test data path:
 
 ```
-./mongo-c-performance test-data-dir
+./mongo-c-performance performance-testdata
 ```
 
 Or run specific benchmarks:
 
 ```
-./mongo-c-performance test-data-dir TestFlatEncoding TestDeepEncoding
+./mongo-c-performance performance-testdata TestFlatEncoding TestDeepEncoding
 ```
 
 The output is comma-separated values:
