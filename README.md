@@ -12,9 +12,8 @@ Install libbson and libmongoc according to their instructions:
 
 ## Test data
 
-The test data for the MongoDB driver performance benchmarks will be uploaded to
-a public location; for now, download it from the corporate Google Drive to a
-local directory.
+Run the included `download-test-data.py` to download test data. See `--help`
+for options.
 
 ## Build
 
