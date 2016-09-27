@@ -343,7 +343,7 @@ multi_download_setup (perf_test_t *test)
 
    for (i = 0; i < download_test->cnt; i++) {
       ctx = &download_test->contexts[i];
-      ctx->filename = bson_strdup_printf ("file%d.txt", i);
+      ctx->filename = bson_strdup_printf ("file%02d.txt", i);
       ctx->path = bson_strdup_printf ("%s/%s", test->data_path, ctx->filename);
    }
 
