@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "mongo-c-performance.h"
-
 #include <bson.h>
 #include <mongoc.h>
 #include <dirent.h>
+
+#include "mongo-c-performance.h"
 
 
 const int NUM_ITERATIONS        = 100;
