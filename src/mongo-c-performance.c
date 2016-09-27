@@ -69,7 +69,7 @@ parse_args (int    argc,
             char **argv)
 {
    if (argc < 2) {
-      fprintf (stderr, "USAGE: mongo-c-performance TEST_DIR [TEST_NAME ...]");
+      fprintf (stderr, "USAGE: mongo-c-performance TEST_DIR [TEST_NAME ...]\n");
       exit (1);
    }
 
