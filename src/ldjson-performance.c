@@ -391,8 +391,8 @@ _export_thread (void *p)
 
    ctx = (export_thread_context_t *) p;
 
-   /* these filenames are 1-indexed */
-   bson_snprintf (filename, PATH_MAX, "ldjson%03d.txt", ctx->offset + 1);
+   /* these filenames are 0-indexed */
+   bson_snprintf (filename, PATH_MAX, "ldjson%03d.txt", ctx->offset);
    bson_snprintf (path, PATH_MAX, "/tmp/TestJsonMultiExport/%s", filename);
    fp = fopen (path, "w+");
    if (!fp) {
