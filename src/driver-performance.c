@@ -69,9 +69,10 @@ driver_test_teardown (perf_test_t *test)
 static void
 driver_test_init (driver_test_t *driver_test,
                   const char    *name,
-                  const char    *data_path)
+                  const char    *data_path,
+                  int64_t        data_sz)
 {
-   perf_test_init (&driver_test->base, name, data_path);
+   perf_test_init (&driver_test->base, name, data_path, data_sz);
 
    driver_test->base.setup = driver_test_setup;
    driver_test->base.teardown = driver_test_teardown;
@@ -135,7 +136,7 @@ run_cmd_teardown (perf_test_t *test)
 static void
 run_cmd_init (run_cmd_test_t *run_cmd_test)
 {
-   driver_test_init (&run_cmd_test->base, "TestRunCommand", NULL);
+   driver_test_init (&run_cmd_test->base, "TestRunCommand", NULL, 160000);
    run_cmd_test->base.base.setup = run_cmd_setup;
    run_cmd_test->base.base.task = run_cmd_task;
    run_cmd_test->base.base.teardown = run_cmd_teardown;
@@ -237,7 +238,8 @@ find_one_init (find_one_test_t *find_one_test)
 {
    driver_test_init (find_one_test,
                      "TestFindOneByID",
-                     "single_and_multi_document/tweet.json");
+                     "single_and_multi_document/tweet.json",
+                     16220000);
    find_one_test->base.setup = find_one_setup;
    find_one_test->base.task = find_one_task;
 }
@@ -337,9 +339,10 @@ single_doc_teardown (perf_test_t *test)
 static void
 single_doc_init (single_doc_test_t *single_doc_test,
                  const char        *name,
-                 const char        *data_path)
+                 const char        *data_path,
+                 int64_t            data_sz)
 {
-   driver_test_init (&single_doc_test->base, name, data_path);
+   driver_test_init (&single_doc_test->base, name, data_path, data_sz);
    single_doc_test->base.base.setup = single_doc_setup;
    single_doc_test->base.base.before = single_doc_before;
    single_doc_test->base.base.teardown = single_doc_teardown;
@@ -363,7 +366,8 @@ small_doc_init (small_doc_test_t *small_doc_test)
 {
    single_doc_init (small_doc_test,
                     "TestSmallDocInsertOne",
-                    "single_and_multi_document/small_doc.json");
+                    "single_and_multi_document/small_doc.json",
+                    2750000);
    small_doc_test->base.base.task = small_doc_task;
 }
 
@@ -397,7 +401,8 @@ large_doc_init (large_doc_test_t *large_doc_test)
 {
    single_doc_init (large_doc_test,
                     "TestLargeDocInsertOne",
-                    "single_and_multi_document/large_doc.json");
+                    "single_and_multi_document/large_doc.json",
+                    27310890);
    large_doc_test->base.base.task = large_doc_task;
 }
 
@@ -476,7 +481,8 @@ find_many_init (find_many_test_t *find_many_test)
 {
    single_doc_init (find_many_test,
                     "TestFindManyAndEmptyCursor",
-                    "single_and_multi_document/tweet.json");
+                    "single_and_multi_document/tweet.json",
+                    16220000);
    find_many_test->base.base.setup = find_many_setup;
    find_many_test->base.base.before = perf_test_before;  /* no "before" */
    find_many_test->base.base.task = find_many_task;
@@ -545,9 +551,10 @@ bulk_insert_task (perf_test_t *test)
 static void
 bulk_insert_init (bulk_insert_test_t *bulk_insert_test,
                   const char         *name,
-                  const char         *data_path)
+                  const char         *data_path,
+                  int64_t             data_sz)
 {
-   single_doc_init (&bulk_insert_test->base, name, data_path);
+   single_doc_init (&bulk_insert_test->base, name, data_path, data_sz);
    bulk_insert_test->base.base.base.task = bulk_insert_task;
 }
 
@@ -562,7 +569,8 @@ bulk_insert_small_init (bulk_insert_test_t *bulk_insert_test)
 {
    bulk_insert_init (bulk_insert_test,
                      "TestSmallDocBulkInsert",
-                     "single_and_multi_document/small_doc.json");
+                     "single_and_multi_document/small_doc.json",
+                     2750000);
    bulk_insert_test->base.base.base.setup = bulk_insert_small_doc_setup;
 }
 
@@ -589,7 +597,8 @@ bulk_insert_large_init (bulk_insert_test_t *bulk_insert_test)
 {
    bulk_insert_init (bulk_insert_test,
                      "TestLargeDocBulkInsert",
-                     "single_and_multi_document/large_doc.json");
+                     "single_and_multi_document/large_doc.json",
+                     27310890);
    bulk_insert_test->base.base.base.setup = bulk_insert_large_doc_setup;
 }
 

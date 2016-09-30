@@ -288,7 +288,8 @@ import_init (import_test_t *import_test)
 {
    perf_test_init (&import_test->base,
                    "TestJsonMultiImport",
-                   "parallel/ldjson_multi");
+                   "parallel/ldjson_multi",
+                   565000000);
    import_test->base.setup = import_setup;
    import_test->base.before = import_before;
    import_test->base.task = import_task;
@@ -497,7 +498,8 @@ export_init (export_test_t *export_test)
 {
    perf_test_init (&export_test->base,
                    "TestJsonMultiExport",
-                   "/tmp/TestJsonMultiExport");
+                   "/tmp/TestJsonMultiExport",
+                   565000000);
    export_test->base.setup = export_setup;
    export_test->base.before = export_before;
    export_test->base.task = export_task;

@@ -33,6 +33,7 @@ typedef void (*perf_callback_t)(perf_test_t *test);
 struct _perf_test_t {
    const char       *name;
    const char       *data_path;
+   int64_t           data_sz;
    perf_callback_t   setup;
    perf_callback_t   before;
    perf_callback_t   task;
@@ -51,13 +52,17 @@ void        write_one_byte_file (mongoc_gridfs_t *gridfs);
 void        run_test_as_utility (perf_test_t     *test);
 void        perf_test_init      (perf_test_t     *test,
                                  const char      *name,
-                                 const char      *data_path);
+                                 const char      *data_path,
+                                 int64_t          data_sz);
 void        perf_test_teardown  (perf_test_t     *test);
 void        perf_test_setup     (perf_test_t     *test);
 void        perf_test_before    (perf_test_t     *test);
 void        perf_test_task      (perf_test_t     *test);
 void        perf_test_after     (perf_test_t     *test);
+void        open_output         (void);
+void        close_output        (void);
 void        print_header        (void);
+void        print_footer        (void);
 void        run_perf_tests      (perf_test_t    **tests);
 
 #endif //MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H

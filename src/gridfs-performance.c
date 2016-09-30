@@ -148,9 +148,10 @@ gridfs_teardown (perf_test_t *test)
 
 static void
 gridfs_init (gridfs_test_t *gridfs_test,
-             const char    *name)
+             const char    *name,
+             int64_t        data_sz)
 {
-   perf_test_init (&gridfs_test->base, name, NULL);
+   perf_test_init (&gridfs_test->base, name, NULL, data_sz);
 
    gridfs_test->base.setup = gridfs_setup;
    gridfs_test->base.teardown = gridfs_teardown;
@@ -186,7 +187,7 @@ upload_task (perf_test_t *test)
 static void
 upload_init (upload_test_t *upload_test)
 {
-   gridfs_init (upload_test, "TestGridFsUpload");
+   gridfs_init (upload_test, "TestGridFsUpload", 52428800);
    upload_test->base.before = upload_before;
    upload_test->base.task = upload_task;
 }
@@ -269,7 +270,7 @@ download_task (perf_test_t *test)
 static void
 download_init (download_test_t *download_test)
 {
-   gridfs_init (&download_test->base, "TestGridFsDownload");
+   gridfs_init (&download_test->base, "TestGridFsDownload", 52428800);
    download_test->base.base.setup = download_setup;
    download_test->base.base.task = download_task;
 }

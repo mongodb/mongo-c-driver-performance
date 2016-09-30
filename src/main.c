@@ -33,6 +33,7 @@ main (int    argc,
 
    parse_args (argc, argv);
 
+   open_output ();
    print_header ();
 
    bson_perf ();
@@ -40,6 +41,9 @@ main (int    argc,
    gridfs_perf ();
    parallel_perf ();
    gridfs_parallel_perf ();
+
+   print_footer ();
+   close_output ();
 
    mongoc_cleanup ();
 }

@@ -229,10 +229,12 @@ perf_test_teardown (perf_test_t *test)
 void
 perf_test_init (perf_test_t *test,
                 const char  *name,
-                const char  *data_path)
+                const char  *data_path,
+                int64_t      data_sz)
 {
    test->name = name;
    test->data_path = data_path;
+   test->data_sz = data_sz;
 
    test->setup = perf_test_setup;
    test->before = perf_test_before;
@@ -242,10 +244,72 @@ perf_test_init (perf_test_t *test,
 }
 
 
+static FILE *output;
+static bool is_first_test;
+
+void
+open_output (void)
+{
+   printf ("opening results.json\n");
+   output = fopen ("results.json", "w");
+
+   if (!output) {
+      perror ("results.json");
+      abort ();
+   }
+}
+
+
+void
+close_output (void)
+{
+   fclose (output);
+}
+
+
 void
 print_header (void)
 {
-   printf ("%25s, median, iters, total\n", "name");
+   fprintf (
+      output,
+      "{\n"
+      "  \"results\": [\n");
+
+   is_first_test = true;
+}
+
+
+static void
+print_result (const char *name,
+              double      ops_per_sec)
+{
+   if (!is_first_test) {
+      fprintf (output, ",\n");
+   }
+
+   is_first_test = false;
+
+   fprintf (
+      output,
+      "    {\n"
+      "      \"name\": \"%s\",\n"
+      "      \"1\": {\n"
+      "        \"ops_per_sec\": %f\n"
+      "      }\n"
+      "    }",
+      name,
+      ops_per_sec);
+}
+
+
+void
+print_footer (void)
+{
+   fprintf (
+      output,
+      "\n"
+      "  ]\n"
+      "}\n");
 }
 
 
@@ -269,6 +333,7 @@ run_perf_tests (perf_test_t **tests)
    while (tests[test_idx]) {
       test = tests[test_idx];
       if (should_run_test (test->name)) {
+         printf ("%s\n", test->name);
          test->setup (test);
 
          /* run at least 1 min, stop at 100 loops or 5 mins, whichever first */
@@ -295,8 +360,7 @@ run_perf_tests (perf_test_t **tests)
          qsort ((void *) results, i, sizeof (int64_t), cmp);
          median_idx = BSON_MAX(BSON_MIN(0, (int) i / 2 - 1), (int) i - 1);
          median = (double) (results[median_idx]) / 1e6;
-         printf ("%25s, %f, %zu, %2.2f\n",
-                 test->name, median, i, total_time / 1e6);
+         print_result (test->name, test->data_sz / median);
 
          test->teardown (test);
       }

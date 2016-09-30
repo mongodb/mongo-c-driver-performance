@@ -10,3 +10,4 @@
 *.exe
 mongo-c-performance
 performance-testdata/*
+results.json

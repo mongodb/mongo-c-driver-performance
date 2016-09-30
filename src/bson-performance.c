@@ -104,9 +104,10 @@ bson_perf_teardown (perf_test_t *test)
 static void
 bson_perf_init (bson_perf_test_t *bson_perf_test,
                 const char       *name,
-                const char       *data_path)
+                const char       *data_path,
+                int64_t           data_sz)
 {
-   perf_test_init ((perf_test_t *) bson_perf_test, name, data_path);
+   perf_test_init ((perf_test_t *) bson_perf_test, name, data_path, data_sz);
    bson_perf_test->base.setup = bson_perf_setup;
    bson_perf_test->base.task = bson_perf_task;
    bson_perf_test->base.teardown = bson_perf_teardown;
@@ -114,12 +115,13 @@ bson_perf_init (bson_perf_test_t *bson_perf_test,
 
 static perf_test_t *
 bson_perf_new (const char *name,
-               const char *data_path)
+               const char *data_path,
+               int64_t     data_sz)
 {
    bson_perf_test_t *bson_perf_test;
 
    bson_perf_test = bson_malloc0 (sizeof (bson_perf_test_t));
-   bson_perf_init (bson_perf_test, name, data_path);
+   bson_perf_init (bson_perf_test, name, data_path, data_sz);
 
    return (perf_test_t *) bson_perf_test;
 }
@@ -130,13 +132,18 @@ bson_perf (void)
 {
    /* other drivers' idea of encoding vs decoding doesn't apply to libbson */
    perf_test_t *tests[] = {
-      bson_perf_new ("TestFlatEncoding", "extended_bson/flat_bson.json"),
-      bson_perf_new ("TestDeepEncoding", "extended_bson/deep_bson.json"),
-      bson_perf_new ("TestFullEncoding", "extended_bson/full_bson.json"),
-
-      bson_perf_new ("TestFlatDecoding", "extended_bson/flat_bson.json"),
-      bson_perf_new ("TestDeepDecoding", "extended_bson/deep_bson.json"),
-      bson_perf_new ("TestFullDecoding", "extended_bson/full_bson.json"),
+      bson_perf_new ("TestFlatEncoding", "extended_bson/flat_bson.json",
+                     75310000),
+      bson_perf_new ("TestDeepEncoding", "extended_bson/deep_bson.json",
+                     19640000),
+      bson_perf_new ("TestFullEncoding", "extended_bson/full_bson.json",
+                     57340000),
+      bson_perf_new ("TestFlatDecoding", "extended_bson/flat_bson.json",
+                     75310000),
+      bson_perf_new ("TestDeepDecoding", "extended_bson/deep_bson.json",
+                     19640000),
+      bson_perf_new ("TestFullDecoding", "extended_bson/full_bson.json",
+                     57340000),
       NULL,
    };
 

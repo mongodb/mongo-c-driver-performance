@@ -264,7 +264,8 @@ multi_upload_init (multi_upload_test_t *upload_test)
 {
    perf_test_init (&upload_test->base,
                    "TestGridFsMultiFileUpload",
-                   "parallel/gridfs_multi");
+                   "parallel/gridfs_multi",
+                   262144000);
    upload_test->base.setup = multi_upload_setup;
    upload_test->base.before = multi_upload_before;
    upload_test->base.task = multi_upload_task;
@@ -517,7 +518,8 @@ multi_download_init (multi_download_test_t *download_test)
 {
    perf_test_init (&download_test->base,
                    "TestGridFsMultiFileDownload",
-                   "/tmp/TestGridFsMultiFileDownload");
+                   "/tmp/TestGridFsMultiFileDownload",
+                   262144000);
    download_test->base.setup = multi_download_setup;
    download_test->base.before = multi_download_before;
    download_test->base.task = multi_download_task;
