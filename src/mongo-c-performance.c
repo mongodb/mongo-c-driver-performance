@@ -293,8 +293,10 @@ print_result (const char *name,
       output,
       "    {\n"
       "      \"name\": \"%s\",\n"
-      "      \"1\": {\n"
-      "        \"ops_per_sec\": %f\n"
+      "      \"results\": {\n"
+      "        \"1\": {\n"
+      "          \"ops_per_sec\": %f\n"
+      "        }\n"
       "      }\n"
       "    }",
       name,
