@@ -241,7 +241,12 @@ download_task (perf_test_t *test)
    gridfs_test = (download_test_t *) test;
 
    bson_append_oid (&query, "_id", 3, &gridfs_test->file_id);
+#if MONGOC_CHECK_VERSION(1, 5, 0)
+   file = mongoc_gridfs_find_one_with_opts (gridfs_test->base.gridfs, &query,
+                                            NULL, &error);
+#else
    file = mongoc_gridfs_find_one (gridfs_test->base.gridfs, &query, &error);
+#endif
    if (!file) {
       MONGOC_ERROR ("gridfs_find_one: %s\n", error.message);
       abort ();

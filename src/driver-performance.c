@@ -213,10 +213,14 @@ find_one_task (perf_test_t *test)
 
    for (i = 0; i < NUM_DOCS; i++) {
       bson_iter_overwrite_int32 (&iter, (int32_t) i);
+#if MONGOC_CHECK_VERSION(1, 5, 0)
+      cursor = mongoc_collection_find_with_opts (driver_test->collection,
+                                                 &query, NULL, NULL);
+#else
       cursor = mongoc_collection_find (driver_test->collection,
-                                       MONGOC_QUERY_NONE, 0, 1, 0,
+                                       MONGOC_QUERY_NONE, 0, 0, 0,
                                        &query, NULL, NULL);
-
+#endif
       if (!mongoc_cursor_next (cursor, &doc)) {
          if (mongoc_cursor_error (cursor, &error)) {
             MONGOC_ERROR ("find_one: %s\n", error.message);
@@ -461,9 +465,14 @@ find_many_task (perf_test_t *test)
    bson_error_t error;
 
    driver_test = (single_doc_test_t *) test;
-   cursor = mongoc_collection_find (driver_test->base.collection,
-                                    MONGOC_QUERY_NONE,
-                                    0, 0, 0, &query, NULL, NULL);
+#if MONGOC_CHECK_VERSION(1, 5, 0)
+      cursor = mongoc_collection_find_with_opts (driver_test->base.collection,
+                                                 &query, NULL, NULL);
+#else
+      cursor = mongoc_collection_find (driver_test->base.collection,
+                                       MONGOC_QUERY_NONE, 0, 0, 0,
+                                       &query, NULL, NULL);
+#endif
 
    while (mongoc_cursor_next (cursor, &doc)) {
    }

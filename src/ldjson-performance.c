@@ -404,9 +404,12 @@ _export_thread (void *p)
    client = mongoc_client_pool_pop (ctx->test->pool);
    collection = mongoc_client_get_collection (client, "perftest", "corpus");
    BSON_APPEND_UTF8 (&query, "file", filename);
+#if MONGOC_CHECK_VERSION(1, 5, 0)
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
+#else
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, NULL);
-
+#endif
    total_sz = 0;
    while (mongoc_cursor_next (cursor, &doc)) {
       json = bson_as_json (doc, &sz);
