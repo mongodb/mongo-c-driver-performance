@@ -17,10 +17,11 @@
 #ifndef MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 #define MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 
-#include <stddef.h>
 #include <bson.h>
 #include <mongoc.h>
 
+#include <stddef.h>
+#include <assert.h>
 
 const int  NUM_ITERATIONS;
 const int  NUM_DOCS;
