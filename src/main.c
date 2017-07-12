@@ -16,9 +16,6 @@
 
 #include "mongo-c-performance.h"
 
-#include <bson.h>
-#include <mongoc.h>
-
 extern void bson_perf            (void);
 extern void driver_perf          (void);
 extern void gridfs_perf          (void);
