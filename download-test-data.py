@@ -34,8 +34,8 @@ TEST_PATH = join(
     dirname(realpath(__file__)),
     join('performance-testdata'))
 
-BASE = ("https://github.com/ajdavis/driver-performance-test-data/"
-        "raw/add-closing-brace/")
+BASE = ("https://github.com/mongodb-labs/driver-performance-test-data/"
+        "raw/master/")
 
 
 def download_test_data(refresh):
