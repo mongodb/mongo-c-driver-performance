@@ -21,13 +21,13 @@
 #include "mongo-c-performance.h"
 
 
-const int NUM_ITERATIONS        = 100;
-const int NUM_DOCS            = 10000;
-const int MIN_TIME_USEC       = 1 * 60 * 1000 * 1000;
-const int MAX_TIME_USEC       = 5 * 60 * 1000 * 1000;
+const int NUM_ITERATIONS = 100;
+const int NUM_DOCS = 10000;
+const int MIN_TIME_USEC = 1 * 60 * 1000 * 1000;
+const int MAX_TIME_USEC = 5 * 60 * 1000 * 1000;
 
-char         *g_test_dir;
-static int    g_num_tests;
+char *g_test_dir;
+static int g_num_tests;
 static char **g_test_names;
 
 
@@ -50,9 +50,9 @@ prep_tmp_dir (const char *path)
       abort ();
    }
 
-   while ((dp = readdir(dirp)) != NULL) {
+   while ((dp = readdir (dirp)) != NULL) {
       bson_snprintf (filepath, PATH_MAX, "%s/%s", path, dp->d_name);
-      if (stat(filepath, &sb) == 0 && S_ISREG (sb.st_mode)) {
+      if (stat (filepath, &sb) == 0 && S_ISREG (sb.st_mode)) {
          if (remove (filepath)) {
             perror ("remove");
             abort ();
@@ -60,13 +60,12 @@ prep_tmp_dir (const char *path)
       }
    }
 
-   closedir(dirp);
+   closedir (dirp);
 }
 
 
 void
-parse_args (int    argc,
-            char **argv)
+parse_args (int argc, char **argv)
 {
    if (argc < 2) {
       fprintf (stderr, "USAGE: mongo-c-performance TEST_DIR [TEST_NAME ...]\n");
@@ -94,8 +93,7 @@ get_ext (const char *filename)
 
 
 void
-read_json_file (const char *data_path,
-                bson_t     *bson)
+read_json_file (const char *data_path, bson_t *bson)
 {
    char *path;
    bson_json_reader_t *reader;
@@ -151,7 +149,7 @@ write_one_byte_file (mongoc_gridfs_t *gridfs)
    mongoc_gridfs_file_destroy (file);
 }
 
-void 
+void
 run_test_as_utility (perf_test_t *test)
 {
    test->setup (test);
@@ -164,14 +162,15 @@ run_test_as_utility (perf_test_t *test)
 
 /* from "man qsort" */
 static int
-cmp (const void *a,
-     const void *b)
+cmp (const void *a, const void *b)
 {
    int64_t arg1 = *(const int64_t *) a;
    int64_t arg2 = *(const int64_t *) b;
 
-   if (arg1 < arg2) return -1;
-   if (arg1 > arg2) return 1;
+   if (arg1 < arg2)
+      return -1;
+   if (arg1 > arg2)
+      return 1;
    return 0;
 }
 
@@ -228,9 +227,9 @@ perf_test_teardown (perf_test_t *test)
 
 void
 perf_test_init (perf_test_t *test,
-                const char  *name,
-                const char  *data_path,
-                int64_t      data_sz)
+                const char *name,
+                const char *data_path,
+                int64_t data_sz)
 {
    test->name = name;
    test->data_path = data_path;
@@ -270,18 +269,16 @@ close_output (void)
 void
 print_header (void)
 {
-   fprintf (
-      output,
-      "{\n"
-      "  \"results\": [\n");
+   fprintf (output,
+            "{\n"
+            "  \"results\": [\n");
 
    is_first_test = true;
 }
 
 
 static void
-print_result (const char *name,
-              double      ops_per_sec)
+print_result (const char *name, double ops_per_sec)
 {
    if (!is_first_test) {
       fprintf (output, ",\n");
@@ -289,29 +286,27 @@ print_result (const char *name,
 
    is_first_test = false;
 
-   fprintf (
-      output,
-      "    {\n"
-      "      \"name\": \"%s\",\n"
-      "      \"results\": {\n"
-      "        \"1\": {\n"
-      "          \"ops_per_sec\": %f\n"
-      "        }\n"
-      "      }\n"
-      "    }",
-      name,
-      ops_per_sec);
+   fprintf (output,
+            "    {\n"
+            "      \"name\": \"%s\",\n"
+            "      \"results\": {\n"
+            "        \"1\": {\n"
+            "          \"ops_per_sec\": %f\n"
+            "        }\n"
+            "      }\n"
+            "    }",
+            name,
+            ops_per_sec);
 }
 
 
 void
 print_footer (void)
 {
-   fprintf (
-      output,
-      "\n"
-      "  ]\n"
-      "}\n");
+   fprintf (output,
+            "\n"
+            "  ]\n"
+            "}\n");
 }
 
 
@@ -340,11 +335,9 @@ run_perf_tests (perf_test_t **tests)
 
          /* run at least 1 min, stop at 100 loops or 5 mins, whichever first */
          total_time = 0;
-         for (i = 0;
-              total_time < MIN_TIME_USEC ||
-                 (i < NUM_ITERATIONS && total_time < MAX_TIME_USEC);
-              i++)
-         {
+         for (i = 0; total_time < MIN_TIME_USEC ||
+                     (i < NUM_ITERATIONS && total_time < MAX_TIME_USEC);
+              i++) {
             if (i >= results_sz) {
                results_sz *= 2;
                results = realloc (results, results_sz * sizeof (int64_t));
@@ -360,7 +353,7 @@ run_perf_tests (perf_test_t **tests)
          }
 
          qsort ((void *) results, i, sizeof (int64_t), cmp);
-         median_idx = BSON_MAX(BSON_MIN(0, (int) i / 2 - 1), (int) i - 1);
+         median_idx = BSON_MAX (BSON_MIN (0, (int) i / 2 - 1), (int) i - 1);
          median = (double) (results[median_idx]) / 1e6;
          print_result (test->name, test->data_sz / median);
 

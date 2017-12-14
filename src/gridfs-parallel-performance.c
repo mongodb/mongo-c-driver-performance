@@ -29,18 +29,18 @@
 
 
 typedef struct {
-   char            *filename;
-   char            *path;
-   pthread_t        thread;
+   char *filename;
+   char *path;
+   pthread_t thread;
    mongoc_client_t *client;
    mongoc_stream_t *stream;
    mongoc_gridfs_t *gridfs;
 } multi_upload_thread_context_t;
 
 typedef struct {
-   perf_test_t                    base;
-   mongoc_client_pool_t          *pool;
-   int                            cnt;
+   perf_test_t base;
+   mongoc_client_pool_t *pool;
+   int cnt;
    multi_upload_thread_context_t *contexts;
 } multi_upload_test_t;
 
@@ -64,7 +64,7 @@ multi_upload_setup (perf_test_t *test)
    upload_test->pool = mongoc_client_pool_new (uri);
 
    data_dir = bson_strdup_printf ("%s/%s", g_test_dir, test->data_path);
-   dirp = opendir(data_dir);
+   dirp = opendir (data_dir);
    if (!dirp) {
       perror ("opening data path");
       abort ();
@@ -72,7 +72,7 @@ multi_upload_setup (perf_test_t *test)
 
    i = 0;
 
-   while ((dp = readdir(dirp)) != NULL) {
+   while ((dp = readdir (dirp)) != NULL) {
       if (!strcmp (get_ext (dp->d_name), "txt")) {
          ++i;
       }
@@ -138,8 +138,8 @@ multi_upload_before (perf_test_t *test)
    for (i = 0; i < upload_test->cnt; i++) {
       ctx = &upload_test->contexts[i];
       ctx->client = mongoc_client_pool_pop (upload_test->pool);
-      ctx->gridfs = mongoc_client_get_gridfs (ctx->client, "perftest",
-                                              NULL, &error);
+      ctx->gridfs =
+         mongoc_client_get_gridfs (ctx->client, "perftest", NULL, &error);
       if (!ctx->gridfs) {
          MONGOC_ERROR ("get_gridfs: %s\n", error.message);
          abort ();
@@ -160,7 +160,7 @@ static void *
 _multi_upload_thread (void *p)
 {
    multi_upload_thread_context_t *ctx;
-   mongoc_gridfs_file_opt_t opt = { 0 };
+   mongoc_gridfs_file_opt_t opt = {0};
    mongoc_gridfs_file_t *file;
    bson_error_t error;
 
@@ -168,9 +168,8 @@ _multi_upload_thread (void *p)
    opt.filename = ctx->filename;
 
    /* upload chunks */
-   file = mongoc_gridfs_create_file_from_stream (ctx->gridfs,
-                                                 ctx->stream,
-                                                 &opt);
+   file =
+      mongoc_gridfs_create_file_from_stream (ctx->gridfs, ctx->stream, &opt);
 
    /* create fs.files document */
    if (!mongoc_gridfs_file_save (file)) {
@@ -279,34 +278,32 @@ multi_upload_perf_new (void)
 {
    multi_upload_test_t *upload_test;
 
-   upload_test = (multi_upload_test_t *) bson_malloc0 (
-      sizeof (multi_upload_test_t));
+   upload_test =
+      (multi_upload_test_t *) bson_malloc0 (sizeof (multi_upload_test_t));
    multi_upload_init (upload_test);
 
    return (perf_test_t *) upload_test;
 }
 
 
-
 /*
- *  -------- GRIDFS MULTI-FILE DOWNLOAD BENCHMARK -------------------------------
+ *  -------- GRIDFS MULTI-FILE DOWNLOAD BENCHMARK
+ * -------------------------------
  */
 
-typedef struct
-{
-   char            *filename;
-   char            *path;
-   pthread_t        thread;
+typedef struct {
+   char *filename;
+   char *path;
+   pthread_t thread;
    mongoc_client_t *client;
    mongoc_stream_t *stream;
    mongoc_gridfs_t *gridfs;
 } multi_download_thread_context_t;
 
-typedef struct
-{
-   perf_test_t                      base;
-   mongoc_client_pool_t            *pool;
-   int                              cnt;
+typedef struct {
+   perf_test_t base;
+   mongoc_client_pool_t *pool;
+   int cnt;
    multi_download_thread_context_t *contexts;
 } multi_download_test_t;
 
@@ -368,8 +365,8 @@ multi_download_before (perf_test_t *test)
    for (i = 0; i < download_test->cnt; i++) {
       ctx = &download_test->contexts[i];
       ctx->client = mongoc_client_pool_pop (download_test->pool);
-      ctx->gridfs = mongoc_client_get_gridfs (ctx->client, "perftest",
-                                              NULL, &error);
+      ctx->gridfs =
+         mongoc_client_get_gridfs (ctx->client, "perftest", NULL, &error);
 
       if (!ctx->gridfs) {
          MONGOC_ERROR ("get_gridfs: %s\n", error.message);
@@ -402,9 +399,8 @@ _multi_download_thread (void *p)
       abort ();
    }
 
-   file = mongoc_gridfs_find_one_by_filename (ctx->gridfs,
-                                              ctx->filename,
-                                              &error);
+   file =
+      mongoc_gridfs_find_one_by_filename (ctx->gridfs, ctx->filename, &error);
 
    if (!file) {
       MONGOC_ERROR ("find_one_by_filename: %s\n", error.message);
@@ -420,7 +416,7 @@ _multi_download_thread (void *p)
                                      &iov,
                                      1, /* iov count */
                                      1, /* min bytes */
-                                     0  /* timeout   */);
+                                     0 /* timeout   */);
 
       if (!sz) {
          break;
@@ -533,8 +529,8 @@ multi_download_perf_new (void)
 {
    multi_download_test_t *download_test;
 
-   download_test = (multi_download_test_t *) bson_malloc0 (
-      sizeof (multi_download_test_t));
+   download_test =
+      (multi_download_test_t *) bson_malloc0 (sizeof (multi_download_test_t));
    multi_download_init (download_test);
 
    return (perf_test_t *) download_test;
@@ -545,9 +541,7 @@ void
 gridfs_parallel_perf (void)
 {
    perf_test_t *tests[] = {
-      multi_upload_perf_new (),
-      multi_download_perf_new (),
-      NULL,
+      multi_upload_perf_new (), multi_download_perf_new (), NULL,
    };
 
    run_perf_tests (tests);

@@ -28,19 +28,19 @@
  */
 
 typedef struct {
-   perf_test_t            base;
-   mongoc_client_pool_t  *pool;
-   int                    cnt;
-   char                 **filenames;
-   char                 **paths;
-   pthread_t             *threads;
-   bool                   add_file_id;
+   perf_test_t base;
+   mongoc_client_pool_t *pool;
+   int cnt;
+   char **filenames;
+   char **paths;
+   pthread_t *threads;
+   bool add_file_id;
 } import_test_t;
 
 
 typedef struct {
    import_test_t *test;
-   int            offset;
+   int offset;
 } import_thread_context_t;
 
 
@@ -72,7 +72,7 @@ import_setup (perf_test_t *test)
    }
 
    data_dir = bson_strdup_printf ("%s/%s", g_test_dir, test->data_path);
-   dirp = opendir(data_dir);
+   dirp = opendir (data_dir);
    if (!dirp) {
       perror ("opening data path");
       abort ();
@@ -80,7 +80,7 @@ import_setup (perf_test_t *test)
 
    i = 0;
 
-   while ((dp = readdir(dirp)) != NULL) {
+   while ((dp = readdir (dirp)) != NULL) {
       if (!strcmp (get_ext (dp->d_name), "txt")) {
          ++i;
       }
@@ -135,15 +135,16 @@ import_before (perf_test_t *test)
    }
 
    BSON_APPEND_UTF8 (&cmd, "create", "corpus");
-   if (!mongoc_collection_command_simple (collection, &cmd, NULL,
-                                          NULL, &error)) {
+   if (!mongoc_collection_command_simple (
+          collection, &cmd, NULL, NULL, &error)) {
       MONGOC_ERROR ("create collection: %s\n", error.message);
       abort ();
    }
 
    if (import_test->add_file_id) {
       BSON_APPEND_INT32 (&index_keys, "file", 1);
-      if (!mongoc_collection_create_index (collection, &index_keys, NULL, &error)) {
+      if (!mongoc_collection_create_index (
+             collection, &index_keys, NULL, &error)) {
          MONGOC_ERROR ("create_index: %s\n", error.message);
          abort ();
       }
@@ -228,8 +229,8 @@ import_task (perf_test_t *test)
    for (i = 0; i < import_test->cnt; i++) {
       contexts[i].test = import_test;
       contexts[i].offset = i;
-      pthread_create (&import_test->threads[i], NULL,
-                      _import_thread, (void *) &contexts[i]);
+      pthread_create (
+         &import_test->threads[i], NULL, _import_thread, (void *) &contexts[i]);
    }
 
    for (i = 0; i < import_test->cnt; i++) {
@@ -315,20 +316,20 @@ import_perf_new (void)
  */
 
 typedef struct {
-   perf_test_t            base;
-   mongoc_client_pool_t  *pool;
-   int                    cnt;
-   pthread_t             *threads;
+   perf_test_t base;
+   mongoc_client_pool_t *pool;
+   int cnt;
+   pthread_t *threads;
 } export_test_t;
 
 
 typedef struct {
    export_test_t *test;
-   int            offset;
+   int offset;
 } export_thread_context_t;
 
 
-static void 
+static void
 _setup_load_docs (void)
 {
    perf_test_t *import;
@@ -344,7 +345,6 @@ _setup_load_docs (void)
 static void
 export_setup (perf_test_t *test)
 {
-
    export_test_t *export_test;
    mongoc_uri_t *uri;
 
@@ -368,7 +368,7 @@ export_before (perf_test_t *test)
    perf_test_before (test);
 
    export_test = (export_test_t *) test;
-   export_test->cnt = 100;  /* DANGER!: assumes test corpus won't change */
+   export_test->cnt = 100; /* DANGER!: assumes test corpus won't change */
    export_test->threads = bson_malloc (export_test->cnt * sizeof (pthread_t));
 }
 
@@ -407,8 +407,8 @@ _export_thread (void *p)
 #if MONGOC_CHECK_VERSION(1, 5, 0)
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
 #else
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    &query, NULL, NULL);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
 #endif
    total_sz = 0;
    while (mongoc_cursor_next (cursor, &doc)) {
@@ -452,8 +452,8 @@ export_task (perf_test_t *test)
    for (i = 0; i < export_test->cnt; i++) {
       contexts[i].test = export_test;
       contexts[i].offset = i;
-      pthread_create (&export_test->threads[i], NULL,
-                      _export_thread, (void *) &contexts[i]);
+      pthread_create (
+         &export_test->threads[i], NULL, _export_thread, (void *) &contexts[i]);
    }
 
    for (i = 0; i < export_test->cnt; i++) {
@@ -527,9 +527,7 @@ void
 parallel_perf (void)
 {
    perf_test_t *tests[] = {
-      import_perf_new (),
-      export_perf_new (),
-      NULL,
+      import_perf_new (), export_perf_new (), NULL,
    };
 
    run_perf_tests (tests);

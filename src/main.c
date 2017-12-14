@@ -16,15 +16,19 @@
 
 #include "mongo-c-performance.h"
 
-extern void bson_perf            (void);
-extern void driver_perf          (void);
-extern void gridfs_perf          (void);
-extern void parallel_perf        (void);
-extern void gridfs_parallel_perf (void);
+extern void
+bson_perf (void);
+extern void
+driver_perf (void);
+extern void
+gridfs_perf (void);
+extern void
+parallel_perf (void);
+extern void
+gridfs_parallel_perf (void);
 
 int
-main (int    argc,
-      char **argv)
+main (int argc, char **argv)
 {
    mongoc_init ();
 

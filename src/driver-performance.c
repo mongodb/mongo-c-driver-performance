@@ -25,8 +25,8 @@
  */
 
 typedef struct {
-   perf_test_t          base;
-   mongoc_client_t     *client;
+   perf_test_t base;
+   mongoc_client_t *client;
    mongoc_collection_t *collection;
 } driver_test_t;
 
@@ -41,9 +41,8 @@ driver_test_setup (perf_test_t *test)
 
    driver_test = (driver_test_t *) test;
    driver_test->client = mongoc_client_new (NULL);
-   driver_test->collection = mongoc_client_get_collection (driver_test->client,
-                                                           "perftest",
-                                                           "corpus");
+   driver_test->collection =
+      mongoc_client_get_collection (driver_test->client, "perftest", "corpus");
 
    db = mongoc_client_get_database (driver_test->client, "perftest");
    if (!mongoc_database_drop (db, &error)) {
@@ -68,9 +67,9 @@ driver_test_teardown (perf_test_t *test)
 
 static void
 driver_test_init (driver_test_t *driver_test,
-                  const char    *name,
-                  const char    *data_path,
-                  int64_t        data_sz)
+                  const char *name,
+                  const char *data_path,
+                  int64_t data_sz)
 {
    perf_test_init (&driver_test->base, name, data_path, data_sz);
 
@@ -82,10 +81,9 @@ driver_test_init (driver_test_t *driver_test,
  *  -------- RUN-COMMAND BENCHMARK -------------------------------------------
  */
 
-typedef struct
-{
+typedef struct {
    driver_test_t base;
-   bson_t        ismaster;
+   bson_t ismaster;
 } run_cmd_test_t;
 
 static void
@@ -111,9 +109,12 @@ run_cmd_task (perf_test_t *test)
    run_cmd_test = (run_cmd_test_t *) test;
 
    for (i = 0; i < NUM_DOCS; i++) {
-      r = mongoc_client_command_simple (run_cmd_test->base.client, "admin",
-                                        &run_cmd_test->ismaster, NULL,
-                                        NULL, &error);
+      r = mongoc_client_command_simple (run_cmd_test->base.client,
+                                        "admin",
+                                        &run_cmd_test->ismaster,
+                                        NULL,
+                                        NULL,
+                                        &error);
 
       if (!r) {
          MONGOC_ERROR ("ismaster: %s\n", error.message);
@@ -175,8 +176,8 @@ find_one_setup (perf_test_t *test)
    find_one_test = (find_one_test_t *) test;
    read_json_file (test->data_path, &tweet);
 
-   bulk = mongoc_collection_create_bulk_operation (find_one_test->collection,
-                                                   true, NULL);
+   bulk = mongoc_collection_create_bulk_operation (
+      find_one_test->collection, true, NULL);
 
    for (i = 0; i < NUM_DOCS; i++) {
       bson_init (&empty);
@@ -214,12 +215,17 @@ find_one_task (perf_test_t *test)
    for (i = 0; i < NUM_DOCS; i++) {
       bson_iter_overwrite_int32 (&iter, (int32_t) i);
 #if MONGOC_CHECK_VERSION(1, 5, 0)
-      cursor = mongoc_collection_find_with_opts (driver_test->collection,
-                                                 &query, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (
+         driver_test->collection, &query, NULL, NULL);
 #else
       cursor = mongoc_collection_find (driver_test->collection,
-                                       MONGOC_QUERY_NONE, 0, 0, 0,
-                                       &query, NULL, NULL);
+                                       MONGOC_QUERY_NONE,
+                                       0,
+                                       0,
+                                       0,
+                                       &query,
+                                       NULL,
+                                       NULL);
 #endif
       if (!mongoc_cursor_next (cursor, &doc)) {
          if (mongoc_cursor_error (cursor, &error)) {
@@ -265,10 +271,9 @@ find_one_new (void)
  */
 
 /* a "base" struct for tests that load one document from JSON */
-typedef struct
-{
+typedef struct {
    driver_test_t base;
-   bson_t        doc;
+   bson_t doc;
 } single_doc_test_t;
 
 static void
@@ -300,8 +305,8 @@ single_doc_before (perf_test_t *test)
 
    BSON_APPEND_UTF8 (&cmd, "create", "corpus");
 
-   if (!mongoc_collection_command_simple (driver_test->base.collection, &cmd,
-                                          NULL, NULL, &error)) {
+   if (!mongoc_collection_command_simple (
+          driver_test->base.collection, &cmd, NULL, NULL, &error)) {
       MONGOC_ERROR ("create collection: %s\n", error.message);
       abort ();
    }
@@ -310,8 +315,7 @@ single_doc_before (perf_test_t *test)
 }
 
 static void
-_single_doc_task (perf_test_t *test,
-                  int          num_docs)
+_single_doc_task (perf_test_t *test, int num_docs)
 {
    single_doc_test_t *driver_test;
    bson_error_t error;
@@ -322,7 +326,9 @@ _single_doc_task (perf_test_t *test,
    for (i = 0; i < num_docs; i++) {
       if (!mongoc_collection_insert (driver_test->base.collection,
                                      MONGOC_INSERT_NONE,
-                                     &driver_test->doc, NULL, &error)) {
+                                     &driver_test->doc,
+                                     NULL,
+                                     &error)) {
          MONGOC_ERROR ("insert: %s\n", error.message);
          abort ();
       }
@@ -342,9 +348,9 @@ single_doc_teardown (perf_test_t *test)
 
 static void
 single_doc_init (single_doc_test_t *single_doc_test,
-                 const char        *name,
-                 const char        *data_path,
-                 int64_t            data_sz)
+                 const char *name,
+                 const char *data_path,
+                 int64_t data_sz)
 {
    driver_test_init (&single_doc_test->base, name, data_path, data_sz);
    single_doc_test->base.base.setup = single_doc_setup;
@@ -440,8 +446,8 @@ find_many_setup (perf_test_t *test)
    single_doc_setup (test);
 
    driver_test = (single_doc_test_t *) test;
-   bulk = mongoc_collection_create_bulk_operation (driver_test->base.collection,
-                                                   true, NULL);
+   bulk = mongoc_collection_create_bulk_operation (
+      driver_test->base.collection, true, NULL);
 
    for (i = 0; i < NUM_DOCS; i++) {
       mongoc_bulk_operation_insert (bulk, &driver_test->doc);
@@ -466,12 +472,17 @@ find_many_task (perf_test_t *test)
 
    driver_test = (single_doc_test_t *) test;
 #if MONGOC_CHECK_VERSION(1, 5, 0)
-      cursor = mongoc_collection_find_with_opts (driver_test->base.collection,
-                                                 &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (
+      driver_test->base.collection, &query, NULL, NULL);
 #else
-      cursor = mongoc_collection_find (driver_test->base.collection,
-                                       MONGOC_QUERY_NONE, 0, 0, 0,
-                                       &query, NULL, NULL);
+   cursor = mongoc_collection_find (driver_test->base.collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0,
+                                    &query,
+                                    NULL,
+                                    NULL);
 #endif
 
    while (mongoc_cursor_next (cursor, &doc)) {
@@ -493,7 +504,7 @@ find_many_init (find_many_test_t *find_many_test)
                     "single_and_multi_document/tweet.json",
                     16220000);
    find_many_test->base.base.setup = find_many_setup;
-   find_many_test->base.base.before = perf_test_before;  /* no "before" */
+   find_many_test->base.base.before = perf_test_before; /* no "before" */
    find_many_test->base.base.task = find_many_task;
 }
 
@@ -516,13 +527,12 @@ find_many_new (void)
 
 /* base for test_bulk_insert_small_doc / large_doc */
 typedef struct {
-   single_doc_test_t   base;
-   int                 num_docs;
+   single_doc_test_t base;
+   int num_docs;
 } bulk_insert_test_t;
 
 static void
-_bulk_insert_setup (perf_test_t *test,
-                    int          num_docs)
+_bulk_insert_setup (perf_test_t *test, int num_docs)
 {
    bulk_insert_test_t *driver_test;
 
@@ -559,9 +569,9 @@ bulk_insert_task (perf_test_t *test)
 
 static void
 bulk_insert_init (bulk_insert_test_t *bulk_insert_test,
-                  const char         *name,
-                  const char         *data_path,
-                  int64_t             data_sz)
+                  const char *name,
+                  const char *data_path,
+                  int64_t data_sz)
 {
    single_doc_init (&bulk_insert_test->base, name, data_path, data_sz);
    bulk_insert_test->base.base.base.task = bulk_insert_task;

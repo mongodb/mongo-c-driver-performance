@@ -27,11 +27,11 @@
  */
 
 typedef struct {
-   perf_test_t      base;
+   perf_test_t base;
    mongoc_client_t *client;
    mongoc_gridfs_t *gridfs;
-   char            *data;
-   size_t           data_sz;
+   char *data;
+   size_t data_sz;
 } gridfs_test_t;
 
 
@@ -41,8 +41,8 @@ _init_gridfs (gridfs_test_t *gridfs_test)
    bson_error_t error;
 
    /* ensures indexes */
-   gridfs_test->gridfs = mongoc_client_get_gridfs (gridfs_test->client,
-                                                   "perftest", NULL, &error);
+   gridfs_test->gridfs =
+      mongoc_client_get_gridfs (gridfs_test->client, "perftest", NULL, &error);
 
    if (!gridfs_test->gridfs) {
       MONGOC_ERROR ("get_gridfs: %s\n", error.message);
@@ -66,8 +66,7 @@ _drop_database (gridfs_test_t *gridfs_test)
 }
 
 static void
-_upload_big_file (gridfs_test_t *gridfs_test,
-                  bson_oid_t    *oid /* OUT */)
+_upload_big_file (gridfs_test_t *gridfs_test, bson_oid_t *oid /* OUT */)
 {
    mongoc_gridfs_file_t *file;
    mongoc_iovec_t iov;
@@ -108,7 +107,8 @@ gridfs_setup (perf_test_t *test)
    gridfs_test = (gridfs_test_t *) test;
    gridfs_test->client = mongoc_client_new (NULL);
 
-   path = bson_strdup_printf ("%s/single_and_multi_document/gridfs_large.bin", g_test_dir);
+   path = bson_strdup_printf ("%s/single_and_multi_document/gridfs_large.bin",
+                              g_test_dir);
    fp = fopen (path, "rb");
    if (!fp) {
       perror ("cannot open GRIDFS_LARGE");
@@ -118,11 +118,11 @@ gridfs_setup (perf_test_t *test)
    /* get the file size */
    if (0 != fseek (fp, 0L, SEEK_END)) {
       perror ("fseek");
-      abort();
+      abort ();
    }
 
    gridfs_test->data_sz = (size_t) ftell (fp);
-   fseek(fp, 0L, SEEK_SET);
+   fseek (fp, 0L, SEEK_SET);
 
    /* read the file */
    gridfs_test->data = bson_malloc (gridfs_test->data_sz);
@@ -147,9 +147,7 @@ gridfs_teardown (perf_test_t *test)
 }
 
 static void
-gridfs_init (gridfs_test_t *gridfs_test,
-             const char    *name,
-             int64_t        data_sz)
+gridfs_init (gridfs_test_t *gridfs_test, const char *name, int64_t data_sz)
 {
    perf_test_init (&gridfs_test->base, name, NULL, data_sz);
 
@@ -210,7 +208,7 @@ upload_perf_new (void)
 
 typedef struct {
    gridfs_test_t base;
-   bson_oid_t    file_id;
+   bson_oid_t file_id;
 } download_test_t;
 
 static void
@@ -242,8 +240,8 @@ download_task (perf_test_t *test)
 
    bson_append_oid (&query, "_id", 3, &gridfs_test->file_id);
 #if MONGOC_CHECK_VERSION(1, 5, 0)
-   file = mongoc_gridfs_find_one_with_opts (gridfs_test->base.gridfs, &query,
-                                            NULL, &error);
+   file = mongoc_gridfs_find_one_with_opts (
+      gridfs_test->base.gridfs, &query, NULL, &error);
 #else
    file = mongoc_gridfs_find_one (gridfs_test->base.gridfs, &query, &error);
 #endif
@@ -255,8 +253,8 @@ download_task (perf_test_t *test)
    /* overwrite the buffer we used for _upload_big_file */
    iov.iov_base = (void *) gridfs_test->base.data;
    iov.iov_len = gridfs_test->base.data_sz;
-   read_sz = mongoc_gridfs_file_readv (file, &iov, 1, gridfs_test->base.data_sz,
-                                       0);
+   read_sz =
+      mongoc_gridfs_file_readv (file, &iov, 1, gridfs_test->base.data_sz, 0);
 
    if (read_sz != gridfs_test->base.data_sz) {
       if (mongoc_gridfs_file_error (file, &error)) {
@@ -295,9 +293,7 @@ void
 gridfs_perf (void)
 {
    perf_test_t *tests[] = {
-      upload_perf_new (),
-      download_perf_new (),
-      NULL,
+      upload_perf_new (), download_perf_new (), NULL,
    };
 
    run_perf_tests (tests);
