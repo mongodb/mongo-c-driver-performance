@@ -330,7 +330,8 @@ run_perf_tests (perf_test_t **tests)
    while (tests[test_idx]) {
       test = tests[test_idx];
       if (should_run_test (test->name)) {
-         printf ("%s\n", test->name);
+         printf ("%20s", test->name);
+         fflush (stdout);
          test->setup (test);
 
          /* run at least 1 min, stop at 100 loops or 5 mins, whichever first */
@@ -355,7 +356,9 @@ run_perf_tests (perf_test_t **tests)
          qsort ((void *) results, i, sizeof (int64_t), cmp);
          median_idx = BSON_MIN (BSON_MAX (0, (int) i / 2), (int) i - 1);
          median = (double) (results[median_idx]) / 1e6;
-         print_result (test->name, test->data_sz / median);
+         ops_per_sec = test->data_sz / median;
+         print_result (test->name, ops_per_sec);
+         printf (" %9.0f\n", ops_per_sec);
 
          test->teardown (test);
       }
