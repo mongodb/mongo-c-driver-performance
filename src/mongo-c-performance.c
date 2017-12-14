@@ -25,7 +25,9 @@ const int NUM_ITERATIONS = 100;
 const int NUM_DOCS = 10000;
 const int MIN_TIME_USEC = 1 * 60 * 1000 * 1000;
 const int MAX_TIME_USEC = 5 * 60 * 1000 * 1000;
+const int TIME_USEC_QUICK = 5 * 1000 * 1000;
 
+static bool g_quick = false;
 char *g_test_dir;
 static int g_num_tests;
 static char **g_test_names;
@@ -67,14 +69,37 @@ prep_tmp_dir (const char *path)
 void
 parse_args (int argc, char **argv)
 {
+   const char *usage =
+      "USAGE: mongo-c-performance [--quick] TEST_DIR [TEST_NAME ...]\n"
+      "\n"
+      "Options:\n"
+      "  --quick      Run for at most 5 seconds\n";
+
+   char **argp;
+
    if (argc < 2) {
-      fprintf (stderr, "USAGE: mongo-c-performance TEST_DIR [TEST_NAME ...]\n");
-      exit (1);
+      fprintf (stderr, "%s", usage);
+      exit (0);
    }
 
-   g_test_dir = argv[1];
+   argp = &argv[1];
+   if (argp[0][0] == '-') {
+      if (!strcmp (argp[0], "--quick")) {
+         g_quick = true;
+         argp++;
+         argc--;
+
+         if (argc < 2) {
+            fprintf (stderr, "%s", usage);
+            exit (1);
+         }
+      }
+   }
+
+   g_test_dir = argp[0];
+   argp++;
    g_num_tests = argc - 2;
-   g_test_names = g_num_tests ? &argv[2] : NULL;
+   g_test_names = g_num_tests ? argp : NULL;
 }
 
 
@@ -320,8 +345,18 @@ run_perf_tests (perf_test_t **tests)
    size_t i;
    int64_t task_start;
    int64_t total_time;
+   int64_t min_time;
+   int64_t max_time;
    int median_idx;
    double median;
+   double ops_per_sec;
+
+   if (g_quick) {
+      min_time = max_time = TIME_USEC_QUICK;
+   } else {
+      min_time = MIN_TIME_USEC;
+      max_time = MAX_TIME_USEC;
+   }
 
    results_sz = NUM_ITERATIONS;
    results = bson_malloc (results_sz * sizeof (int64_t));
@@ -336,8 +371,8 @@ run_perf_tests (perf_test_t **tests)
 
          /* run at least 1 min, stop at 100 loops or 5 mins, whichever first */
          total_time = 0;
-         for (i = 0; total_time < MIN_TIME_USEC ||
-                     (i < NUM_ITERATIONS && total_time < MAX_TIME_USEC);
+         for (i = 0; total_time < min_time ||
+                     (i < NUM_ITERATIONS && total_time < max_time);
               i++) {
             if (i >= results_sz) {
                results_sz *= 2;
