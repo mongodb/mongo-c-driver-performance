@@ -22,7 +22,6 @@
 #include <dirent.h>
 #include <pthread.h>
 
-
 /*
  *  -------- LDJSON MULTI-FILE IMPORT BENCHMARK -------------------------------
  */
@@ -117,16 +116,20 @@ import_before (perf_test_t *test)
 {
    import_test_t *import_test;
    mongoc_client_t *client;
+   mongoc_database_t *db;
    mongoc_collection_t *collection;
    bson_t cmd = BSON_INITIALIZER;
    bson_t index_keys = BSON_INITIALIZER;
+   char *index_name;
+   bson_t *create_indexes;
    bson_error_t error;
 
    perf_test_before (test);
 
    import_test = (import_test_t *) test;
    client = mongoc_client_pool_pop (import_test->pool);
-   collection = mongoc_client_get_collection (client, "perftest", "corpus");
+   db = mongoc_client_get_database (client, "perftest");
+   collection = mongoc_database_get_collection (db, "corpus");
 
    if (!mongoc_collection_drop (collection, &error) &&
        !strstr (error.message, "ns not found")) {
@@ -143,11 +146,28 @@ import_before (perf_test_t *test)
 
    if (import_test->add_file_id) {
       BSON_APPEND_INT32 (&index_keys, "file", 1);
-      if (!mongoc_collection_create_index (
-             collection, &index_keys, NULL, &error)) {
+      index_name = mongoc_collection_keys_to_index_string (&index_keys);
+      create_indexes =
+         BCON_NEW ("createIndexes",
+                   BCON_UTF8 (mongoc_collection_get_name (collection)),
+                   "indexes",
+                   "[",
+                   "{",
+                   "key",
+                   BCON_DOCUMENT (&index_keys),
+                   "name",
+                   BCON_UTF8 (index_name),
+                   "}",
+                   "]");
+
+      if (!mongoc_database_write_command_with_opts (
+             db, create_indexes, NULL /* opts */, NULL, &error)) {
          MONGOC_ERROR ("create_index: %s\n", error.message);
          abort ();
       }
+
+      bson_free (index_name);
+      bson_destroy (create_indexes);
    }
 
    import_test->threads = bson_malloc (import_test->cnt * sizeof (pthread_t));
@@ -155,6 +175,7 @@ import_before (perf_test_t *test)
    bson_destroy (&index_keys);
    bson_destroy (&cmd);
    mongoc_collection_destroy (collection);
+   mongoc_database_destroy (db);
    mongoc_client_pool_push (import_test->pool, client);
 }
 
@@ -177,7 +198,7 @@ _import_thread (void *p)
    add_file_id = ctx->test->add_file_id;
    client = mongoc_client_pool_pop (ctx->test->pool);
    collection = mongoc_client_get_collection (client, "perftest", "corpus");
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    path = ctx->test->paths[ctx->offset];
    reader = bson_json_reader_new_from_file (path, &error);

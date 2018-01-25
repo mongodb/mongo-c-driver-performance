@@ -11,3 +11,7 @@
 mongo-c-performance
 performance-testdata/*
 results.json
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+mongo-c-performance.cbp

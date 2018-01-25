@@ -176,8 +176,8 @@ find_one_setup (perf_test_t *test)
    find_one_test = (find_one_test_t *) test;
    read_json_file (test->data_path, &tweet);
 
-   bulk = mongoc_collection_create_bulk_operation (
-      find_one_test->collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      find_one_test->collection, NULL);
 
    for (i = 0; i < NUM_DOCS; i++) {
       bson_init (&empty);
@@ -446,8 +446,8 @@ find_many_setup (perf_test_t *test)
    single_doc_setup (test);
 
    driver_test = (single_doc_test_t *) test;
-   bulk = mongoc_collection_create_bulk_operation (
-      driver_test->base.collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      driver_test->base.collection, NULL);
 
    for (i = 0; i < NUM_DOCS; i++) {
       mongoc_bulk_operation_insert (bulk, &driver_test->doc);
@@ -554,8 +554,8 @@ bulk_insert_task (perf_test_t *test)
    driver_test = (bulk_insert_test_t *) test;
    num_docs = (uint32_t) driver_test->num_docs;
 
-   bulk = mongoc_collection_create_bulk_operation (
-      driver_test->base.base.collection, false, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      driver_test->base.base.collection, NULL);
 
    for (i = 0; i < num_docs; i++) {
       mongoc_bulk_operation_insert (bulk, &driver_test->base.doc);
