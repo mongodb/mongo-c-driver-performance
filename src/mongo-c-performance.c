@@ -84,7 +84,10 @@ parse_args (int argc, char **argv)
 
    argp = &argv[1];
    if (argp[0][0] == '-') {
-      if (!strcmp (argp[0], "--quick")) {
+      if (!strcmp (argp[0], "-h") || !strcmp (argp[0], "--help")) {
+         printf ("%s", usage);
+         exit (0);
+      } else if (!strcmp (argp[0], "--quick")) {
          g_quick = true;
          argp++;
          argc--;
