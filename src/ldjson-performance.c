@@ -193,6 +193,7 @@ _import_thread (void *p)
    bson_json_reader_t *reader;
    int r;
    bson_t bson = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
 
    ctx = (import_thread_context_t *) p;
    add_file_id = ctx->test->add_file_id;
@@ -207,6 +208,8 @@ _import_thread (void *p)
       abort ();
    }
 
+   BSON_APPEND_BOOL (&opts, "validate", false); /* for speed */
+
    while ((r = bson_json_reader_read (reader, &bson, &error))) {
       if (r < 0) {
          MONGOC_ERROR ("reader_read: %s\n", error.message);
@@ -217,7 +220,11 @@ _import_thread (void *p)
          BSON_APPEND_UTF8 (&bson, "file", ctx->test->filenames[ctx->offset]);
       }
 
-      mongoc_bulk_operation_insert (bulk, &bson);
+      if (!mongoc_bulk_operation_insert_with_opts (
+             bulk, &bson, &opts, &error)) {
+         MONGOC_ERROR ("Error appending bulk insert: %s\n", error.message);
+         abort ();
+      }
       bson_reinit (&bson);
    }
 
@@ -227,6 +234,7 @@ _import_thread (void *p)
    }
 
    bson_destroy (&bson);
+   bson_destroy (&opts);
    bson_json_reader_destroy (reader);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);

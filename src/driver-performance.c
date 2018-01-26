@@ -318,21 +318,26 @@ static void
 _single_doc_task (perf_test_t *test, int num_docs)
 {
    single_doc_test_t *driver_test;
+   bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
    int i;
 
    driver_test = (single_doc_test_t *) test;
 
+   BSON_APPEND_BOOL (&opts, "validate", false); /* for speed */
+
    for (i = 0; i < num_docs; i++) {
-      if (!mongoc_collection_insert (driver_test->base.collection,
-                                     MONGOC_INSERT_NONE,
-                                     &driver_test->doc,
-                                     NULL,
-                                     &error)) {
+      if (!mongoc_collection_insert_one (driver_test->base.collection,
+                                         &driver_test->doc,
+                                         &opts,
+                                         NULL,
+                                         &error)) {
          MONGOC_ERROR ("insert: %s\n", error.message);
          abort ();
       }
    }
+
+   bson_destroy (&opts);
 }
 
 static void
@@ -549,6 +554,7 @@ bulk_insert_task (perf_test_t *test)
    bson_error_t error;
    uint32_t num_docs;
    mongoc_bulk_operation_t *bulk;
+   bson_t opts = BSON_INITIALIZER;
    int i;
 
    driver_test = (bulk_insert_test_t *) test;
@@ -557,14 +563,22 @@ bulk_insert_task (perf_test_t *test)
    bulk = mongoc_collection_create_bulk_operation_with_opts (
       driver_test->base.base.collection, NULL);
 
+   BSON_APPEND_BOOL (&opts, "validate", false); /* for speed */
+
    for (i = 0; i < num_docs; i++) {
-      mongoc_bulk_operation_insert (bulk, &driver_test->base.doc);
+      if (!mongoc_bulk_operation_insert_with_opts (
+             bulk, &driver_test->base.doc, &opts, &error)) {
+         MONGOC_ERROR ("Error appending insert to bulk: %s\n", error.message);
+         abort ();
+      }
    }
 
    if (!mongoc_bulk_operation_execute (bulk, NULL, &error)) {
       MONGOC_ERROR ("insert_bulk: %s\n", error.message);
       abort ();
    }
+
+   bson_destroy (&opts);
 }
 
 static void
