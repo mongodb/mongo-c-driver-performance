@@ -63,7 +63,7 @@ _visit_document (const bson_iter_t *iter,
 {
    bson_iter_t child;
 
-   assert (bson_iter_init (&child, v_document));
+   BSON_ASSERT (bson_iter_init (&child, v_document));
    bson_iter_visit_all (&child, &visitors, NULL);
 
    return false; /* continue */
