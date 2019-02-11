@@ -324,7 +324,9 @@ _single_doc_task (perf_test_t *test, int num_docs)
 
    driver_test = (single_doc_test_t *) test;
 
-   BSON_APPEND_BOOL (&opts, "bypassDocumentValidation", false); /* for speed */
+   /* TODO uncomment pending bug fix.
+   BSON_APPEND_BOOL (&opts, "validate", false);
+   */
 
    for (i = 0; i < num_docs; i++) {
       if (!mongoc_collection_insert_one (driver_test->base.collection,
@@ -563,7 +565,9 @@ bulk_insert_task (perf_test_t *test)
    bulk = mongoc_collection_create_bulk_operation_with_opts (
       driver_test->base.base.collection, NULL);
 
-   BSON_APPEND_BOOL (&opts, "bypassDocumentValidation", true); /* for speed */
+   /* TODO uncomment pending bug fix.
+   BSON_APPEND_BOOL (&opts, "validate", false);
+   */
 
    for (i = 0; i < num_docs; i++) {
       if (!mongoc_bulk_operation_insert_with_opts (
