@@ -208,7 +208,7 @@ _import_thread (void *p)
       abort ();
    }
 
-   BSON_APPEND_BOOL (&opts, "validate", false); /* for speed */
+   BSON_APPEND_BOOL (&opts, "bypassDocumentValidation", false); /* for speed */
 
    while ((r = bson_json_reader_read (reader, &bson, &error))) {
       if (r < 0) {
