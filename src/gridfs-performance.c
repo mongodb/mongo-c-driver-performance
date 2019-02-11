@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <bson.h>
 #include <mongoc.h>
-#include <bson-types.h>
 
 
 /*
