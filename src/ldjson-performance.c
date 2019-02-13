@@ -208,9 +208,7 @@ _import_thread (void *p)
       abort ();
    }
 
-   /* TODO uncomment pending bug fix.
    BSON_APPEND_BOOL (&opts, "validate", false);
-   */
 
    while ((r = bson_json_reader_read (reader, &bson, &error))) {
       if (r < 0) {
