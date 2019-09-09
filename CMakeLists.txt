@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/")
 find_package (Threads)
 
 set(LIBMONGOC_REQUIRED_VERSION 1.9.2)
-find_package(libmongoc-1.0 ${LIBMONGOC_REQUIRED_VERSION} REQUIRED)
+find_package(mongoc-1.0 ${LIBMONGOC_REQUIRED_VERSION} REQUIRED)
 
 include_directories(
     ${MONGOC_INCLUDE_DIRS}
@@ -28,6 +28,6 @@ set(SOURCE_FILES
 add_executable(mongo-c-performance ${SOURCE_FILES})
 target_link_libraries(
         mongo-c-performance
-        ${MONGOC_LIBRARIES}
+        mongo::mongoc_shared
         ${CMAKE_THREAD_LIBS_INIT}
 )
