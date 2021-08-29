@@ -1,14 +1,11 @@
-# Driver performance tests for libbson and  libmongoc
+# Driver performance tests for libbson and libmongoc
 
 This is a C language implementation of the MongoDB standard driver performance
 benchmark suite.
 
 ## Dependencies
 
-Install libbson and libmongoc according to their instructions:
-
-* [Install libbson](https://api.mongodb.org/libbson/current/installing.html).
-* [Install libmongoc](https://api.mongodb.org/c/current/installing.html).
+Install libbson and libmongoc according to their [instructions|http://mongoc.org/libmongoc/current/installing.html].
 
 ## Test data
 
@@ -33,13 +30,16 @@ Or run specific benchmarks:
 ./mongo-c-performance performance-testdata TestFlatEncoding TestDeepEncoding
 ```
 
-The output is comma-separated values:
+The output is space-separated values:
 
 ```
-name, median, iters, total
+name, bytes_per_second
 ```
 
-The first column is the test name, the second is its median duration in seconds.
+The first column is the test name.
+
+The second column is the data size of the micro-benchmark divided by the median
+of iteration runtimes.
 
 The program runs each test for at least a minute, and runs it 100 times or five
 minutes, whichever comes first. The third and fourth columns are informational:
