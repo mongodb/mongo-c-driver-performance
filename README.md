@@ -5,7 +5,7 @@ benchmark suite.
 
 ## Dependencies
 
-Install libbson and libmongoc according to their [instructions|http://mongoc.org/libmongoc/current/installing.html].
+Install libbson and libmongoc according to their [instructions](http://mongoc.org/libmongoc/current/installing.html).
 
 ## Test data
 
