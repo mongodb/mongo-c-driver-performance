@@ -1,0 +1,1 @@
+This directory is used to store data from the `download-test-data.py` script.

@@ -23,9 +23,9 @@
 #include <stddef.h>
 #include <assert.h>
 
-const int NUM_ITERATIONS;
-const int NUM_DOCS;
-char *g_test_dir;
+extern const int NUM_ITERATIONS;
+extern const int NUM_DOCS;
+extern char *g_test_dir;
 
 typedef struct _perf_test_t perf_test_t;
 
