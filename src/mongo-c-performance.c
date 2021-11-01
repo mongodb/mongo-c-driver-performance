@@ -298,8 +298,7 @@ void
 print_header (void)
 {
    fprintf (output,
-            "{\n"
-            "  \"results\": [\n");
+            "[\n");
 
    is_first_test = true;
 }
@@ -315,14 +314,17 @@ print_result (const char *name, double ops_per_sec)
    is_first_test = false;
 
    fprintf (output,
-            "    {\n"
-            "      \"name\": \"%s\",\n"
-            "      \"results\": {\n"
-            "        \"1\": {\n"
-            "          \"ops_per_sec\": %f\n"
-            "        }\n"
+            "  {\n"
+            "    \"info\": {\n"
+            "      \"test_name\": \"%s\"\n"
+            "    },\n"
+            "    \"metrics\": [\n"
+            "      {\n"
+            "        \"name\": \"ops_per_sec\",\n"
+            "        \"value\": %f\n"
             "      }\n"
-            "    }",
+            "    ]\n"
+            "  }",
             name,
             ops_per_sec);
 }
@@ -333,8 +335,7 @@ print_footer (void)
 {
    fprintf (output,
             "\n"
-            "  ]\n"
-            "}\n");
+            "]\n");
 }
 
 
