@@ -15,7 +15,8 @@
  */
 
 /* Tests performance of parallel find operations on a client pool.
- * This workload was identified in CDRIVER-4002. */
+ * The task definition mirrors the workload identified in CDRIVER-4002.
+ * The task definition is not part of the "MongoDB Driver Performance Benchmarking" specification. */
 
 #include "mongo-c-performance.h"
 
