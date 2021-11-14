@@ -27,6 +27,7 @@
 
 typedef struct {
    pthread_t thread;
+   mongoc_client_t *client;
 } findone_parallel_thread_context_t;
 
 typedef struct {
@@ -120,6 +121,42 @@ static void findone_parallel_perf_teardown (perf_test_t *test) {
    bson_free (findone_parallel_test->contexts);
 }
 
+static void
+findone_parallel_perf_before (perf_test_t *test)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      (findone_parallel_perf_test_t *) test;
+   int i;
+
+   for (i = 0; i < findone_parallel_test->nthreads; i++) {
+      findone_parallel_test->contexts[i].client =
+         mongoc_client_pool_pop (findone_parallel_test->pool);
+   }
+}
+
+static void
+findone_parallel_perf_after (perf_test_t *test)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      (findone_parallel_perf_test_t *) test;
+   int i;
+
+   if (findone_parallel_test->nthreads > 100) {
+      MONGOC_ERROR ("Error: trying to start test with %d threads.",
+                    findone_parallel_test->nthreads);
+      MONGOC_ERROR ("Cannot start test with nthreads > 100.");
+      MONGOC_ERROR ("libmongoc uses a default maxPoolSize of 100. Cannot pop "
+                    "more than 100.");
+      MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
+      abort ();
+   }
+
+   for (i = 0; i < findone_parallel_test->nthreads; i++) {
+      mongoc_client_pool_push (findone_parallel_test->pool,
+                               findone_parallel_test->contexts[i].client);
+   }
+}
+
 static perf_test_t *
 findone_parallel_perf_new (const char *name, int nthreads)
 {
@@ -138,6 +175,8 @@ findone_parallel_perf_new (const char *name, int nthreads)
    test->task = findone_parallel_perf_task;
    test->setup = findone_parallel_perf_setup;
    test->teardown = findone_parallel_perf_teardown;
+   test->before = findone_parallel_perf_before;
+   test->after = findone_parallel_perf_after;
    return test;
 }
 
