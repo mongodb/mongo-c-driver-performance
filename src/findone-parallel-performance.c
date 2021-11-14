@@ -36,15 +36,24 @@ typedef struct {
    findone_parallel_thread_context_t *contexts;
 } findone_parallel_perf_test_t;
 
+/* FINDONE_FILTER_SIZE is the size of the BSON document {"id": 0}.
+ * Determined with this Python script:
+ *    import bson
+ *    print (len(bson.encode({"id": 0}))) # prints "13"
+ */
+#define FINDONE_FILTER_SIZE 13
+/* FINDONE_COUNT is the number of "find" operations done by one thread in one iteration. */
+#define FINDONE_COUNT 10000
+
 static void* _findone_parallel_perf_thread (void* p) {
    findone_parallel_thread_context_t *ctx = (findone_parallel_thread_context_t*) p;
 
    int i;
    int computation = 1;
 
-   for (i = 0; i < 100; i++) {
+   for (i = 0; i < FINDONE_COUNT; i++) {
       computation = computation + 1 * 2;
-      usleep (10);
+      usleep (1);
    }
    return NULL;
 }
@@ -104,13 +113,15 @@ findone_parallel_perf_new (const char *name, int nthreads)
    findone_parallel_perf_test_t *findone_parallel_test =
       bson_malloc0 (sizeof (findone_parallel_perf_test_t));
    perf_test_t *test = (perf_test_t *) findone_parallel_test;
+   int64_t data_size;
 
    findone_parallel_test->nthreads = nthreads;
+   data_size = FINDONE_FILTER_SIZE * nthreads * FINDONE_COUNT;
 
    perf_test_init (test,
                    name,
                    NULL /* data path */,
-                   100 /* TODO: choose an appropriate data size. */);
+                   data_size);
    test->task = findone_parallel_perf_task;
    test->setup = findone_parallel_perf_setup;
    test->teardown = findone_parallel_perf_teardown;
