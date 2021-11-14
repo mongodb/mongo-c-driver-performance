@@ -48,14 +48,34 @@ typedef struct {
 
 static void* _findone_parallel_perf_thread (void* p) {
    findone_parallel_thread_context_t *ctx = (findone_parallel_thread_context_t*) p;
-
+   mongoc_collection_t *coll;
    int i;
    int computation = 1;
+   bson_t filter = BSON_INITIALIZER;
+
+   coll = mongoc_client_get_collection (ctx->client, "perftest", "coll");
+   bson_append_int32 (&filter, "_id", 3, 0);
 
    for (i = 0; i < FINDONE_COUNT; i++) {
-      computation = computation + 1 * 2;
-      usleep (1);
+      mongoc_cursor_t *cursor;
+      const bson_t *doc;
+      bson_error_t error;
+
+      cursor = mongoc_collection_find_with_opts (coll, &filter, NULL /* opts */, NULL /* read_prefs */);
+      /* iterate once to send "find" */
+      if (mongoc_cursor_next (cursor, &doc)) {
+         MONGOC_ERROR ("Error: unexpected document returned from collection: %s", bson_as_json (doc, NULL));
+         abort ();
+      }
+      if (mongoc_cursor_error (cursor, &error)) {
+         MONGOC_ERROR ("Error from cursor iteration: %s", error.message);
+         abort ();
+      }
+      mongoc_cursor_destroy (cursor);
    }
+
+   mongoc_collection_destroy (coll);
+   bson_destroy (&filter);
    return NULL;
 }
 
@@ -68,7 +88,7 @@ static void findone_parallel_perf_task (perf_test_t *test) {
       findone_parallel_thread_context_t* ctx;
 
       ctx = &findone_parallel_test->contexts[i];
-      ret = pthread_create (&ctx->thread, NULL /* attr */, _findone_parallel_perf_thread, &ctx);
+      ret = pthread_create (&ctx->thread, NULL /* attr */, _findone_parallel_perf_thread, ctx);
       if (ret != 0) {
          MONGOC_ERROR ("Error: pthread_create returned %d", ret);
          abort ();
