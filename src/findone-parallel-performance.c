@@ -89,13 +89,26 @@ static void findone_parallel_perf_task (perf_test_t *test) {
 static void findone_parallel_perf_setup (perf_test_t *test) {
    mongoc_uri_t *uri;
    findone_parallel_perf_test_t *findone_parallel_test = (findone_parallel_perf_test_t*) test;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_database_t *db;
+   bson_error_t error;
 
    MONGOC_DEBUG ("findone_parallel_perf_setup");
 
    uri = mongoc_uri_new (NULL);
-   findone_parallel_test->pool = mongoc_client_pool_new (uri);
+   pool = mongoc_client_pool_new (uri);
+   findone_parallel_test->pool = pool;
    findone_parallel_test->contexts = (findone_parallel_thread_context_t*) bson_malloc0 (findone_parallel_test->nthreads * sizeof (findone_parallel_thread_context_t));
 
+   client = mongoc_client_pool_pop (findone_parallel_test->pool);
+   db = mongoc_client_get_database (client, "perftest");
+   if (!mongoc_database_drop (db, &error)) {
+      MONGOC_ERROR ("database_drop: %s\n", error.message);
+      abort ();
+   }
+   mongoc_database_destroy (db);
+   mongoc_client_pool_push (pool, client);
    mongoc_uri_destroy (uri);
 }
 
