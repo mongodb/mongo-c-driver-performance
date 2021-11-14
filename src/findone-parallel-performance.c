@@ -19,7 +19,14 @@
 
 #include "mongo-c-performance.h"
 
-void findone_parallel_perf_task (perf_test_t *pt) {
+#include <mongoc.h>
+
+typedef struct {
+   perf_test_t base;
+   mongoc_client_pool_t *pool;
+} findone_parallel_perf_test_t;
+
+static void findone_parallel_perf_task (perf_test_t *pt) {
    int i;
    int computation = 1;
 
@@ -29,12 +36,40 @@ void findone_parallel_perf_task (perf_test_t *pt) {
    }
 }
 
-perf_test_t * findone_parallel_perf_new (const char* name, int nthreads) {
-   perf_test_t * pt = bson_malloc0 (sizeof (perf_test_t));
+static void findone_parallel_perf_setup (perf_test_t *test) {
+   mongoc_uri_t *uri;
+   findone_parallel_perf_test_t *findone_parallel_test = (findone_parallel_perf_test_t*) test;
 
-   perf_test_init (pt, name, NULL /* data path */, 100 /* TODO: choose an appropriate data size. */);
-   pt->task = findone_parallel_perf_task;
-   return pt;
+   MONGOC_DEBUG ("findone_parallel_perf_setup");
+
+   uri = mongoc_uri_new (NULL);
+   findone_parallel_test->pool = mongoc_client_pool_new (uri);
+
+   mongoc_uri_destroy (uri);
+}
+
+static void findone_parallel_perf_teardown (perf_test_t *test) {
+   findone_parallel_perf_test_t *findone_parallel_test = (findone_parallel_perf_test_t*) test;
+
+   MONGOC_DEBUG ("findone_parallel_perf_teardown");
+   mongoc_client_pool_destroy (findone_parallel_test->pool);
+}
+
+static perf_test_t *
+findone_parallel_perf_new (const char *name, int nthreads)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      bson_malloc0 (sizeof (findone_parallel_perf_test_t));
+   perf_test_t *test = (perf_test_t *) findone_parallel_test;
+
+   perf_test_init (test,
+                   name,
+                   NULL /* data path */,
+                   100 /* TODO: choose an appropriate data size. */);
+   test->task = findone_parallel_perf_task;
+   test->setup = findone_parallel_perf_setup;
+   test->teardown = findone_parallel_perf_teardown;
+   return test;
 }
 
 void findone_parallel_perf (void) {
