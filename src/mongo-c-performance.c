@@ -25,7 +25,7 @@ const int NUM_ITERATIONS = 100;
 const int NUM_DOCS = 10000;
 const int MIN_TIME_USEC = 1 * 60 * 1000 * 1000;
 const int MAX_TIME_USEC = 5 * 60 * 1000 * 1000;
-const int TIME_USEC_QUICK = 1 * 1000 * 1000;
+const int TIME_USEC_QUICK = 5 * 1000 * 1000;
 
 static bool g_quick = false;
 char *g_test_dir;
