@@ -131,8 +131,6 @@ findone_parallel_perf_setup (perf_test_t *test)
    mongoc_database_t *db;
    bson_error_t error;
 
-   MONGOC_DEBUG ("findone_parallel_perf_setup");
-
    uri = mongoc_uri_new (NULL);
    pool = mongoc_client_pool_new (uri);
    findone_parallel_test->pool = pool;
@@ -158,7 +156,6 @@ findone_parallel_perf_teardown (perf_test_t *test)
    findone_parallel_perf_test_t *findone_parallel_test =
       (findone_parallel_perf_test_t *) test;
 
-   MONGOC_DEBUG ("findone_parallel_perf_teardown");
    mongoc_client_pool_destroy (findone_parallel_test->pool);
    bson_free (findone_parallel_test->contexts);
 }
