@@ -45,8 +45,8 @@ typedef struct {
  *    print (len(bson.encode({"id": 0}))) # prints "13"
  */
 #define FINDONE_FILTER_SIZE 13
-/* FINDONE_COUNT is the number of "find" operations done by all threads combined
- * in one iteration. */
+/* FINDONE_COUNT is the total number of "find" operations done by all threads.
+ * Each thread runs FINDONE_COUNT / n_threads "find" operations. */
 #define FINDONE_COUNT 10000
 
 static void *
