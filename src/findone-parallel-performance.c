@@ -16,7 +16,8 @@
 
 /* Tests performance of parallel find operations on a client pool.
  * The task definition mirrors the workload identified in CDRIVER-4002.
- * The task definition is not part of the "MongoDB Driver Performance Benchmarking" specification. */
+ * The task definition is not part of the "MongoDB Driver Performance
+ * Benchmarking" specification. */
 
 #include "mongo-c-performance.h"
 
@@ -44,11 +45,15 @@ typedef struct {
  *    print (len(bson.encode({"id": 0}))) # prints "13"
  */
 #define FINDONE_FILTER_SIZE 13
-/* FINDONE_COUNT is the number of "find" operations done by all threads combined in one iteration. */
+/* FINDONE_COUNT is the number of "find" operations done by all threads combined
+ * in one iteration. */
 #define FINDONE_COUNT 10000
 
-static void* _findone_parallel_perf_thread (void* p) {
-   findone_parallel_thread_context_t *ctx = (findone_parallel_thread_context_t*) p;
+static void *
+_findone_parallel_perf_thread (void *p)
+{
+   findone_parallel_thread_context_t *ctx =
+      (findone_parallel_thread_context_t *) p;
    mongoc_collection_t *coll;
    int i;
    int computation = 1;
@@ -62,10 +67,13 @@ static void* _findone_parallel_perf_thread (void* p) {
       const bson_t *doc;
       bson_error_t error;
 
-      cursor = mongoc_collection_find_with_opts (coll, &filter, NULL /* opts */, NULL /* read_prefs */);
+      cursor = mongoc_collection_find_with_opts (
+         coll, &filter, NULL /* opts */, NULL /* read_prefs */);
       /* iterate once to send "find" */
       if (mongoc_cursor_next (cursor, &doc)) {
-         MONGOC_ERROR ("Error: unexpected document returned from collection: %s", bson_as_json (doc, NULL));
+         MONGOC_ERROR (
+            "Error: unexpected document returned from collection: %s",
+            bson_as_json (doc, NULL));
          abort ();
       }
       if (mongoc_cursor_error (cursor, &error)) {
@@ -80,16 +88,20 @@ static void* _findone_parallel_perf_thread (void* p) {
    return NULL;
 }
 
-static void findone_parallel_perf_task (perf_test_t *test) {
-   findone_parallel_perf_test_t *findone_parallel_test = (findone_parallel_perf_test_t*) test;
+static void
+findone_parallel_perf_task (perf_test_t *test)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      (findone_parallel_perf_test_t *) test;
    int i;
    int ret;
 
    for (i = 0; i < findone_parallel_test->n_threads; i++) {
-      findone_parallel_thread_context_t* ctx;
+      findone_parallel_thread_context_t *ctx;
 
       ctx = &findone_parallel_test->contexts[i];
-      ret = pthread_create (&ctx->thread, NULL /* attr */, _findone_parallel_perf_thread, ctx);
+      ret = pthread_create (
+         &ctx->thread, NULL /* attr */, _findone_parallel_perf_thread, ctx);
       if (ret != 0) {
          MONGOC_ERROR ("Error: pthread_create returned %d", ret);
          abort ();
@@ -97,7 +109,7 @@ static void findone_parallel_perf_task (perf_test_t *test) {
    }
 
    for (i = 0; i < findone_parallel_test->n_threads; i++) {
-      findone_parallel_thread_context_t* ctx;
+      findone_parallel_thread_context_t *ctx;
 
       ctx = &findone_parallel_test->contexts[i];
       ret = pthread_join (ctx->thread, NULL /* out */);
@@ -108,9 +120,12 @@ static void findone_parallel_perf_task (perf_test_t *test) {
    }
 }
 
-static void findone_parallel_perf_setup (perf_test_t *test) {
+static void
+findone_parallel_perf_setup (perf_test_t *test)
+{
    mongoc_uri_t *uri;
-   findone_parallel_perf_test_t *findone_parallel_test = (findone_parallel_perf_test_t*) test;
+   findone_parallel_perf_test_t *findone_parallel_test =
+      (findone_parallel_perf_test_t *) test;
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    mongoc_database_t *db;
@@ -121,7 +136,10 @@ static void findone_parallel_perf_setup (perf_test_t *test) {
    uri = mongoc_uri_new (NULL);
    pool = mongoc_client_pool_new (uri);
    findone_parallel_test->pool = pool;
-   findone_parallel_test->contexts = (findone_parallel_thread_context_t*) bson_malloc0 (findone_parallel_test->n_threads * sizeof (findone_parallel_thread_context_t));
+   findone_parallel_test->contexts =
+      (findone_parallel_thread_context_t *) bson_malloc0 (
+         findone_parallel_test->n_threads *
+         sizeof (findone_parallel_thread_context_t));
 
    client = mongoc_client_pool_pop (findone_parallel_test->pool);
    db = mongoc_client_get_database (client, "perftest");
@@ -134,8 +152,11 @@ static void findone_parallel_perf_setup (perf_test_t *test) {
    mongoc_uri_destroy (uri);
 }
 
-static void findone_parallel_perf_teardown (perf_test_t *test) {
-   findone_parallel_perf_test_t *findone_parallel_test = (findone_parallel_perf_test_t*) test;
+static void
+findone_parallel_perf_teardown (perf_test_t *test)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      (findone_parallel_perf_test_t *) test;
 
    MONGOC_DEBUG ("findone_parallel_perf_teardown");
    mongoc_client_pool_destroy (findone_parallel_test->pool);
@@ -150,7 +171,10 @@ findone_parallel_perf_before (perf_test_t *test)
    int i;
 
    if (FINDONE_COUNT % findone_parallel_test->n_threads != 0) {
-      MONGOC_ERROR ("FINDONE_COUNT (%d) is not divisible by number of threads: %d", FINDONE_COUNT, findone_parallel_test->n_threads);
+      MONGOC_ERROR (
+         "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
+         FINDONE_COUNT,
+         findone_parallel_test->n_threads);
       MONGOC_ERROR ("Consider revising test or using integer division.");
       abort ();
    }
@@ -158,7 +182,8 @@ findone_parallel_perf_before (perf_test_t *test)
    for (i = 0; i < findone_parallel_test->n_threads; i++) {
       findone_parallel_test->contexts[i].client =
          mongoc_client_pool_pop (findone_parallel_test->pool);
-      findone_parallel_test->contexts[i].n_findone_to_run = FINDONE_COUNT / findone_parallel_test->n_threads;
+      findone_parallel_test->contexts[i].n_findone_to_run =
+         FINDONE_COUNT / findone_parallel_test->n_threads;
    }
 }
 
@@ -196,10 +221,7 @@ findone_parallel_perf_new (const char *name, int n_threads)
    findone_parallel_test->n_threads = n_threads;
    data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT;
 
-   perf_test_init (test,
-                   name,
-                   NULL /* data path */,
-                   data_size);
+   perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = findone_parallel_perf_task;
    test->setup = findone_parallel_perf_setup;
    test->teardown = findone_parallel_perf_teardown;
@@ -208,13 +230,14 @@ findone_parallel_perf_new (const char *name, int n_threads)
    return test;
 }
 
-void findone_parallel_perf (void) {
+void
+findone_parallel_perf (void)
+{
    perf_test_t *perf_tests[] = {
       findone_parallel_perf_new ("FindOneParallel1Threads", 1),
       findone_parallel_perf_new ("FindOneParallel10Threads", 10),
       findone_parallel_perf_new ("FindOneParallel100Threads", 100),
-      NULL
-   };
+      NULL};
 
    run_perf_tests (perf_tests);
 }
