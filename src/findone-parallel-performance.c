@@ -56,7 +56,6 @@ _findone_parallel_perf_thread (void *p)
       (findone_parallel_thread_context_t *) p;
    mongoc_collection_t *coll;
    int i;
-   int computation = 1;
    bson_t filter = BSON_INITIALIZER;
 
    coll = mongoc_client_get_collection (ctx->client, "perftest", "coll");
