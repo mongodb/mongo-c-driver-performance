@@ -287,7 +287,7 @@ ping_parallel_perf_task (perf_test_t *test)
 
       ctx = &findone_parallel_test->contexts[i];
       ret = pthread_create (
-         &ctx->thread, NULL /* attr */, _findone_parallel_perf_thread, ctx);
+         &ctx->thread, NULL /* attr */, _ping_parallel_perf_thread, ctx);
       if (ret != 0) {
          MONGOC_ERROR ("Error: pthread_create returned %d", ret);
          abort ();
