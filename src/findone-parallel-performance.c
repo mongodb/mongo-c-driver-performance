@@ -49,6 +49,10 @@ typedef struct {
  * Each thread runs FINDONE_COUNT / n_threads "find" operations. */
 #define FINDONE_COUNT 10000
 
+/* MONGOC_DEFAULT_MAX_POOL_SIZE is the default number of clients that can be
+ * popped at one time in a mongoc_client_pool_t */
+#define MONGOC_DEFAULT_MAX_POOL_SIZE 100
+
 static void *
 _findone_parallel_perf_thread (void *p)
 {
@@ -129,6 +133,8 @@ findone_parallel_perf_setup (perf_test_t *test)
    mongoc_client_t *client;
    mongoc_database_t *db;
    bson_error_t error;
+   int i;
+   mongoc_client_t *clients[MONGOC_DEFAULT_MAX_POOL_SIZE];
 
    uri = mongoc_uri_new (NULL);
    pool = mongoc_client_pool_new (uri);
@@ -146,6 +152,25 @@ findone_parallel_perf_setup (perf_test_t *test)
    }
    mongoc_database_destroy (db);
    mongoc_client_pool_push (pool, client);
+   /* Warm up each connection by popping all clients and sending one ping. */
+   for (i = 0; i < MONGOC_DEFAULT_MAX_POOL_SIZE; i++) {
+      bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
+
+      clients[i] = mongoc_client_pool_pop (pool);
+      if (!mongoc_client_command_simple (clients[i],
+                                         "db",
+                                         cmd,
+                                         NULL /* read prefs */,
+                                         NULL /* reply */,
+                                         &error)) {
+         MONGOC_ERROR ("client_command_simple error: %s", error.message);
+         abort ();
+      }
+      bson_destroy (cmd);
+   }
+   for (i = 0; i < MONGOC_DEFAULT_MAX_POOL_SIZE; i++) {
+      mongoc_client_pool_push (pool, clients[i]);
+   }
    mongoc_uri_destroy (uri);
 }
 
