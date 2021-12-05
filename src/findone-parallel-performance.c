@@ -226,6 +226,81 @@ findone_parallel_perf_new (const char *name, int n_threads)
    return test;
 }
 
+static void *
+_ping_parallel_perf_thread (void *p)
+{
+   findone_parallel_thread_context_t *ctx =
+      (findone_parallel_thread_context_t *) p;
+   int i;
+   bson_t cmd = BSON_INITIALIZER;
+
+   bson_append_int32 (&cmd, "ping", 4, 1);
+
+   for (i = 0; i < ctx->n_findone_to_run; i++) {
+      bson_error_t error;
+
+      if (!mongoc_client_command_simple (ctx->client, "db", &cmd, NULL /* read prefs */, NULL /* reply */, &error)) {
+         MONGOC_ERROR ("Error from ping: %s", error.message);
+         abort ();
+      }
+   }
+
+   bson_destroy (&cmd);
+   return NULL;
+}
+
+static void
+ping_parallel_perf_task (perf_test_t *test)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      (findone_parallel_perf_test_t *) test;
+   int i;
+   int ret;
+
+   for (i = 0; i < findone_parallel_test->n_threads; i++) {
+      findone_parallel_thread_context_t *ctx;
+
+      ctx = &findone_parallel_test->contexts[i];
+      ret = pthread_create (
+         &ctx->thread, NULL /* attr */, _findone_parallel_perf_thread, ctx);
+      if (ret != 0) {
+         MONGOC_ERROR ("Error: pthread_create returned %d", ret);
+         abort ();
+      }
+   }
+
+   for (i = 0; i < findone_parallel_test->n_threads; i++) {
+      findone_parallel_thread_context_t *ctx;
+
+      ctx = &findone_parallel_test->contexts[i];
+      ret = pthread_join (ctx->thread, NULL /* out */);
+      if (ret != 0) {
+         MONGOC_ERROR ("Error: pthread_join returned %d", ret);
+         abort ();
+      }
+   }
+}
+
+static perf_test_t *
+ping_parallel_perf_new (const char *name, int n_threads)
+{
+   findone_parallel_perf_test_t *findone_parallel_test =
+      bson_malloc0 (sizeof (findone_parallel_perf_test_t));
+   perf_test_t *test = (perf_test_t *) findone_parallel_test;
+   int64_t data_size;
+
+   findone_parallel_test->n_threads = n_threads;
+   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT;
+
+   perf_test_init (test, name, NULL /* data path */, data_size);
+   test->task = ping_parallel_perf_task;
+   test->setup = findone_parallel_perf_setup;
+   test->teardown = findone_parallel_perf_teardown;
+   test->before = findone_parallel_perf_before;
+   test->after = findone_parallel_perf_after;
+   return test;
+}
+
 void
 findone_parallel_perf (void)
 {
@@ -233,6 +308,9 @@ findone_parallel_perf (void)
       findone_parallel_perf_new ("FindOneParallel1Threads", 1),
       findone_parallel_perf_new ("FindOneParallel10Threads", 10),
       findone_parallel_perf_new ("FindOneParallel100Threads", 100),
+      ping_parallel_perf_new ("PingParallel1Threads", 1),
+      ping_parallel_perf_new ("PingParallel10Threads", 10),
+      ping_parallel_perf_new ("PingParallel100Threads", 100),
       NULL};
 
    run_perf_tests (perf_tests);
