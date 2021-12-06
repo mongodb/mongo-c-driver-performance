@@ -23,7 +23,7 @@ set(SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/src/gridfs-performance.c
     ${CMAKE_SOURCE_DIR}/src/gridfs-parallel-performance.c
     ${CMAKE_SOURCE_DIR}/src/ldjson-performance.c
-    ${CMAKE_SOURCE_DIR}/src/findone-parallel-performance.c
+    ${CMAKE_SOURCE_DIR}/src/parallel-client-performance.c
 )
 
 add_executable(mongo-c-performance ${SOURCE_FILES})

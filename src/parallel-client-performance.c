@@ -46,13 +46,13 @@ typedef struct {
  *    >>> print (len(bson.encode({"ping": 1})))
  *    15
  */
-#define PING_COMMAND_SIZE 15
+static const int PING_COMMAND_SIZE = 15;
 /* OPERATION_COUNT is the total number of operations done by each thread. */
-#define OPERATION_COUNT 10000
+static const int OPERATION_COUNT = 10000;
 
 /* MONGOC_DEFAULT_MAX_POOL_SIZE is the default number of clients that can be
  * popped at one time in a mongoc_client_pool_t */
-#define MONGOC_DEFAULT_MAX_POOL_SIZE 100
+static const int MONGOC_DEFAULT_MAX_POOL_SIZE = 100;
 
 
 static void
