@@ -313,8 +313,6 @@ parallel_single_perf_before (perf_test_t *test)
    }
 }
 
-
-
 static void *
 _parallel_single_perf_thread (void *p)
 {
