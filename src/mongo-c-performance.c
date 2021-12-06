@@ -369,7 +369,7 @@ run_perf_tests (perf_test_t **tests)
    while (tests[test_idx]) {
       test = tests[test_idx];
       if (should_run_test (test->name)) {
-         printf ("%20s", test->name);
+         printf ("%20s\n", test->name);
          fflush (stdout);
          test->setup (test);
 
