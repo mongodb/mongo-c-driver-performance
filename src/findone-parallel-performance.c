@@ -426,12 +426,12 @@ void
 findone_parallel_perf (void)
 {
    perf_test_t *perf_tests[] = {
-      ping_parallel_perf_new ("PingParallel1Threads", 1),
-      ping_parallel_perf_new ("PingParallel10Threads", 10),
-      ping_parallel_perf_new ("PingParallel100Threads", 100),
-      parallel_single_perf_new ("PingParallelSingle1Threads", 1),
-      parallel_single_perf_new ("PingParallelSingle10Threads", 10),
-      parallel_single_perf_new ("PingParallelSingle100Threads", 100),
+      ping_parallel_perf_new ("Parallel/Pool/Threads:1", 1),
+      ping_parallel_perf_new ("Parallel/Pool/Threads:10", 10),
+      ping_parallel_perf_new ("Parallel/Pool/Threads:100", 100),
+      parallel_single_perf_new ("Parallel/Single/Threads:1", 1),
+      parallel_single_perf_new ("Parallel/Single/Threads:10", 10),
+      parallel_single_perf_new ("Parallel/Single/Threads:100", 100),
       NULL};
 
    run_perf_tests (perf_tests);
