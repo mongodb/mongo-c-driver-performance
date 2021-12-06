@@ -156,7 +156,7 @@ parallel_pool_perf_after (perf_test_t *test)
 }
 
 static void *
-_ping_parallel_perf_thread (void *p)
+_parallel_pool_perf_thread (void *p)
 {
    parallel_pool_thread_context_t *ctx =
       (parallel_pool_thread_context_t *) p;
@@ -179,7 +179,7 @@ _ping_parallel_perf_thread (void *p)
 }
 
 static void
-ping_parallel_perf_task (perf_test_t *test)
+parallel_pool_perf_task (perf_test_t *test)
 {
    parallel_pool_perf_test_t *parallel_pool_test =
       (parallel_pool_perf_test_t *) test;
@@ -191,7 +191,7 @@ ping_parallel_perf_task (perf_test_t *test)
 
       ctx = &parallel_pool_test->contexts[i];
       ret = pthread_create (
-         &ctx->thread, NULL /* attr */, _ping_parallel_perf_thread, ctx);
+         &ctx->thread, NULL /* attr */, _parallel_pool_perf_thread, ctx);
       if (ret != 0) {
          MONGOC_ERROR ("Error: pthread_create returned %d", ret);
          abort ();
@@ -211,7 +211,7 @@ ping_parallel_perf_task (perf_test_t *test)
 }
 
 static perf_test_t *
-ping_parallel_perf_new (const char *name, int n_threads)
+parallel_pool_perf_new (const char *name, int n_threads)
 {
    parallel_pool_perf_test_t *parallel_pool_test =
       bson_malloc0 (sizeof (parallel_pool_perf_test_t));
@@ -222,7 +222,7 @@ ping_parallel_perf_new (const char *name, int n_threads)
    data_size = PING_COMMAND_SIZE * OPERATION_COUNT * n_threads;
 
    perf_test_init (test, name, NULL /* data path */, data_size);
-   test->task = ping_parallel_perf_task;
+   test->task = parallel_pool_perf_task;
    test->setup = parallel_pool_perf_setup;
    test->teardown = parallel_pool_perf_teardown;
    test->before = parallel_pool_perf_before;
@@ -415,9 +415,9 @@ void
 findone_parallel_perf (void)
 {
    perf_test_t *perf_tests[] = {
-      ping_parallel_perf_new ("Parallel/Pool/Threads:1", 1),
-      ping_parallel_perf_new ("Parallel/Pool/Threads:10", 10),
-      ping_parallel_perf_new ("Parallel/Pool/Threads:100", 100),
+      parallel_pool_perf_new ("Parallel/Pool/Threads:1", 1),
+      parallel_pool_perf_new ("Parallel/Pool/Threads:10", 10),
+      parallel_pool_perf_new ("Parallel/Pool/Threads:100", 100),
       parallel_single_perf_new ("Parallel/Single/Threads:1", 1),
       parallel_single_perf_new ("Parallel/Single/Threads:10", 10),
       parallel_single_perf_new ("Parallel/Single/Threads:100", 100),
