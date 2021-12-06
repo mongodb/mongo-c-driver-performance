@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-/* Tests performance of parallel find operations on a client pool.
+/* Tests performance of parallel operations on a client pool.
  * The task definition mirrors the workload identified in CDRIVER-4002.
+ * Tests with multiple single threaded clients for a baseline.
  * The task definition is not part of the "MongoDB Driver Performance
  * Benchmarking" specification. */
 
