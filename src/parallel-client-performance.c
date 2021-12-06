@@ -67,8 +67,9 @@ parallel_pool_perf_setup (perf_test_t *test)
    bson_error_t error;
    int i;
    mongoc_client_t **clients;
-   
-   clients = bson_malloc0 (MONGOC_DEFAULT_MAX_POOL_SIZE * sizeof (mongoc_client_t*));
+
+   clients =
+      bson_malloc0 (MONGOC_DEFAULT_MAX_POOL_SIZE * sizeof (mongoc_client_t *));
 
    uri = mongoc_uri_new (NULL);
    pool = mongoc_client_pool_new (uri);
@@ -150,8 +151,7 @@ parallel_pool_perf_after (perf_test_t *test)
 static void *
 _parallel_pool_perf_thread (void *p)
 {
-   parallel_pool_thread_context_t *ctx =
-      (parallel_pool_thread_context_t *) p;
+   parallel_pool_thread_context_t *ctx = (parallel_pool_thread_context_t *) p;
    int i;
    bson_t cmd = BSON_INITIALIZER;
 
@@ -160,7 +160,12 @@ _parallel_pool_perf_thread (void *p)
    for (i = 0; i < ctx->n_operations_to_run; i++) {
       bson_error_t error;
 
-      if (!mongoc_client_command_simple (ctx->client, "db", &cmd, NULL /* read prefs */, NULL /* reply */, &error)) {
+      if (!mongoc_client_command_simple (ctx->client,
+                                         "db",
+                                         &cmd,
+                                         NULL /* read prefs */,
+                                         NULL /* reply */,
+                                         &error)) {
          MONGOC_ERROR ("Error from ping: %s", error.message);
          abort ();
       }
@@ -215,8 +220,11 @@ parallel_pool_perf_new (const char *name, int n_threads)
 
    if (n_threads > MONGOC_DEFAULT_MAX_POOL_SIZE) {
       MONGOC_ERROR ("Error: trying to start test with %d threads.", n_threads);
-      MONGOC_ERROR ("Cannot start test with n_threads > %d.", MONGOC_DEFAULT_MAX_POOL_SIZE);
-      MONGOC_ERROR ("libmongoc uses a default maxPoolSize of %d. Cannot pop more.", MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("Cannot start test with n_threads > %d.",
+                    MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR (
+         "libmongoc uses a default maxPoolSize of %d. Cannot pop more.",
+         MONGOC_DEFAULT_MAX_POOL_SIZE);
       MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
       abort ();
    }
@@ -255,7 +263,8 @@ parallel_single_perf_setup (perf_test_t *test)
    int i;
 
    uri = mongoc_uri_new (NULL);
-   parallel_single_test->clients = bson_malloc0 (MONGOC_DEFAULT_MAX_POOL_SIZE * sizeof (mongoc_client_t*));
+   parallel_single_test->clients =
+      bson_malloc0 (MONGOC_DEFAULT_MAX_POOL_SIZE * sizeof (mongoc_client_t *));
    for (i = 0; i < MONGOC_DEFAULT_MAX_POOL_SIZE; i++) {
       parallel_single_test->clients[i] = mongoc_client_new_from_uri (uri);
    }
@@ -313,7 +322,8 @@ parallel_single_perf_before (perf_test_t *test)
 
 
    for (i = 0; i < parallel_single_test->n_threads; i++) {
-      parallel_single_test->contexts[i].client = parallel_single_test->clients[i];
+      parallel_single_test->contexts[i].client =
+         parallel_single_test->clients[i];
       parallel_single_test->contexts[i].n_operations_to_run = OPERATION_COUNT;
    }
 }
@@ -331,7 +341,12 @@ _parallel_single_perf_thread (void *p)
    for (i = 0; i < ctx->n_operations_to_run; i++) {
       bson_error_t error;
 
-      if (!mongoc_client_command_simple (ctx->client, "db", &cmd, NULL /* read prefs */, NULL /* reply */, &error)) {
+      if (!mongoc_client_command_simple (ctx->client,
+                                         "db",
+                                         &cmd,
+                                         NULL /* read prefs */,
+                                         NULL /* reply */,
+                                         &error)) {
          MONGOC_ERROR ("Error from ping: %s", error.message);
          abort ();
       }
@@ -386,8 +401,10 @@ parallel_single_perf_new (const char *name, int n_threads)
 
    if (n_threads > MONGOC_DEFAULT_MAX_POOL_SIZE) {
       MONGOC_ERROR ("Error: trying to start test with %d threads.", n_threads);
-      MONGOC_ERROR ("Cannot start test with n_threads > %d.", MONGOC_DEFAULT_MAX_POOL_SIZE);
-      MONGOC_ERROR ("Test has a hard-coded maximum of %d clients.", MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("Cannot start test with n_threads > %d.",
+                    MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("Test has a hard-coded maximum of %d clients.",
+                    MONGOC_DEFAULT_MAX_POOL_SIZE);
       MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
       abort ();
    }
