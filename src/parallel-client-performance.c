@@ -66,7 +66,9 @@ parallel_pool_perf_setup (perf_test_t *test)
    mongoc_database_t *db;
    bson_error_t error;
    int i;
-   mongoc_client_t *clients[MONGOC_DEFAULT_MAX_POOL_SIZE];
+   mongoc_client_t **clients;
+   
+   clients = bson_malloc0 (MONGOC_DEFAULT_MAX_POOL_SIZE * sizeof (mongoc_client_t*));
 
    uri = mongoc_uri_new (NULL);
    pool = mongoc_client_pool_new (uri);
@@ -104,6 +106,7 @@ parallel_pool_perf_setup (perf_test_t *test)
       mongoc_client_pool_push (pool, clients[i]);
    }
    mongoc_uri_destroy (uri);
+   bson_free (clients);
 }
 
 static void
@@ -235,7 +238,7 @@ typedef struct {
 
 typedef struct {
    perf_test_t base;
-   mongoc_client_t *clients[MONGOC_DEFAULT_MAX_POOL_SIZE];
+   mongoc_client_t **clients;
    int n_threads;
    parallel_single_thread_context_t *contexts;
 } parallel_single_perf_test_t;
@@ -252,6 +255,7 @@ parallel_single_perf_setup (perf_test_t *test)
    int i;
 
    uri = mongoc_uri_new (NULL);
+   parallel_single_test->clients = bson_malloc0 (MONGOC_DEFAULT_MAX_POOL_SIZE * sizeof (mongoc_client_t*));
    for (i = 0; i < MONGOC_DEFAULT_MAX_POOL_SIZE; i++) {
       parallel_single_test->clients[i] = mongoc_client_new_from_uri (uri);
    }
@@ -297,6 +301,7 @@ parallel_single_perf_teardown (perf_test_t *test)
       mongoc_client_destroy (parallel_single_test->clients[i]);
    }
    bson_free (parallel_single_test->contexts);
+   bson_free (parallel_single_test->clients);
 }
 
 static void
