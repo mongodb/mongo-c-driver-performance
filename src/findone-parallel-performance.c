@@ -39,15 +39,15 @@ typedef struct {
    parallel_pool_thread_context_t *contexts;
 } parallel_pool_perf_test_t;
 
-/* FINDONE_FILTER_SIZE is the size of the BSON document {"id": 0}.
+/* PING_CMD_SIZE is the size of the BSON document {"ping": 1}.
  * Determined with this Python script:
- *    import bson
- *    print (len(bson.encode({"id": 0}))) # prints "13"
+ *    >>> import bson
+ *    >>> print (len(bson.encode({"ping": 1})))
+ *    15
  */
-#define FINDONE_FILTER_SIZE 13
-/* FINDONE_COUNT is the total number of "find" operations done by all threads.
- * Each thread runs FINDONE_COUNT / n_threads "find" operations. */
-#define FINDONE_COUNT 10000
+#define PING_COMMAND_SIZE 15
+/* OPERATION_COUNT is the total number of operations done by each thread. */
+#define OPERATION_COUNT 10000
 
 /* MONGOC_DEFAULT_MAX_POOL_SIZE is the default number of clients that can be
  * popped at one time in a mongoc_client_pool_t */
@@ -133,19 +133,11 @@ parallel_pool_perf_before (perf_test_t *test)
       (parallel_pool_perf_test_t *) test;
    int i;
 
-   // if (FINDONE_COUNT % findone_parallel_test->n_threads != 0) {
-   //    MONGOC_ERROR (
-   //       "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
-   //       FINDONE_COUNT,
-   //       findone_parallel_test->n_threads);
-   //    MONGOC_ERROR ("Consider revising test or using integer division.");
-   //    abort ();
-   // }
 
    for (i = 0; i < parallel_pool_test->n_threads; i++) {
       parallel_pool_test->contexts[i].client =
          mongoc_client_pool_pop (parallel_pool_test->pool);
-      parallel_pool_test->contexts[i].n_operations_to_run = FINDONE_COUNT;
+      parallel_pool_test->contexts[i].n_operations_to_run = OPERATION_COUNT;
    }
 }
 
@@ -237,7 +229,7 @@ ping_parallel_perf_new (const char *name, int n_threads)
    int64_t data_size;
 
    parallel_pool_test->n_threads = n_threads;
-   data_size = PING_COMMAND_SIZE * FINDONE_COUNT * n_threads;
+   data_size = PING_COMMAND_SIZE * OPERATION_COUNT * n_threads;
 
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = ping_parallel_perf_task;
@@ -369,18 +361,10 @@ parallel_single_perf_before (perf_test_t *test)
       (parallel_single_perf_test_t *) test;
    int i;
 
-   // if (FINDONE_COUNT % parallel_single_test->n_threads != 0) {
-   //    MONGOC_ERROR (
-   //       "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
-   //       FINDONE_COUNT,
-   //       parallel_single_test->n_threads);
-   //    MONGOC_ERROR ("Consider revising test or using integer division.");
-   //    abort ();
-   // }
 
    for (i = 0; i < parallel_single_test->n_threads; i++) {
       parallel_single_test->contexts[i].client = parallel_single_test->clients[i];
-      parallel_single_test->contexts[i].n_operations_to_run = FINDONE_COUNT;
+      parallel_single_test->contexts[i].n_operations_to_run = OPERATION_COUNT;
    }
 }
 
@@ -411,7 +395,7 @@ parallel_single_perf_new (const char *name, int n_threads)
    int64_t data_size;
 
    parallel_single_test->n_threads = n_threads;
-   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT * n_threads;
+   data_size = PING_COMMAND_SIZE * OPERATION_COUNT * n_threads;
 
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = parallel_single_perf_task;
