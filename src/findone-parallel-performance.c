@@ -39,7 +39,7 @@ typedef struct {
    parallel_pool_thread_context_t *contexts;
 } parallel_pool_perf_test_t;
 
-/* PING_CMD_SIZE is the size of the BSON document {"ping": 1}.
+/* PING_COMMAND_SIZE is the size of the BSON document {"ping": 1}.
  * Determined with this Python script:
  *    >>> import bson
  *    >>> print (len(bson.encode({"ping": 1})))
