@@ -267,7 +267,7 @@ parallel_single_perf_setup (perf_test_t *test)
       abort ();
    }
    mongoc_database_destroy (db);
-   /* Warm up each connection by popping all clients and sending one ping. */
+   /* Warm up each connection by sending one ping to each client. */
    for (i = 0; i < MONGOC_DEFAULT_MAX_POOL_SIZE; i++) {
       bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
