@@ -123,7 +123,6 @@ parallel_pool_perf_before (perf_test_t *test)
       (parallel_pool_perf_test_t *) test;
    int i;
 
-
    for (i = 0; i < parallel_pool_test->n_threads; i++) {
       parallel_pool_test->contexts[i].client =
          mongoc_client_pool_pop (parallel_pool_test->pool);
@@ -240,8 +239,6 @@ typedef struct {
    int n_threads;
    parallel_single_thread_context_t *contexts;
 } parallel_single_perf_test_t;
-
-
 
 static void
 parallel_single_perf_setup (perf_test_t *test)
