@@ -203,20 +203,19 @@ findone_parallel_perf_before (perf_test_t *test)
       (findone_parallel_perf_test_t *) test;
    int i;
 
-   if (FINDONE_COUNT % findone_parallel_test->n_threads != 0) {
-      MONGOC_ERROR (
-         "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
-         FINDONE_COUNT,
-         findone_parallel_test->n_threads);
-      MONGOC_ERROR ("Consider revising test or using integer division.");
-      abort ();
-   }
+   // if (FINDONE_COUNT % findone_parallel_test->n_threads != 0) {
+   //    MONGOC_ERROR (
+   //       "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
+   //       FINDONE_COUNT,
+   //       findone_parallel_test->n_threads);
+   //    MONGOC_ERROR ("Consider revising test or using integer division.");
+   //    abort ();
+   // }
 
    for (i = 0; i < findone_parallel_test->n_threads; i++) {
       findone_parallel_test->contexts[i].client =
          mongoc_client_pool_pop (findone_parallel_test->pool);
-      findone_parallel_test->contexts[i].n_findone_to_run =
-         FINDONE_COUNT / findone_parallel_test->n_threads;
+      findone_parallel_test->contexts[i].n_findone_to_run = FINDONE_COUNT;
    }
 }
 
@@ -252,7 +251,7 @@ findone_parallel_perf_new (const char *name, int n_threads)
    int64_t data_size;
 
    findone_parallel_test->n_threads = n_threads;
-   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT;
+   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT * n_threads;
 
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = findone_parallel_perf_task;
@@ -327,7 +326,7 @@ ping_parallel_perf_new (const char *name, int n_threads)
    int64_t data_size;
 
    findone_parallel_test->n_threads = n_threads;
-   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT;
+   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT * n_threads;
 
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = ping_parallel_perf_task;
@@ -459,19 +458,18 @@ parallel_single_perf_before (perf_test_t *test)
       (parallel_single_perf_test_t *) test;
    int i;
 
-   if (FINDONE_COUNT % parallel_single_test->n_threads != 0) {
-      MONGOC_ERROR (
-         "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
-         FINDONE_COUNT,
-         parallel_single_test->n_threads);
-      MONGOC_ERROR ("Consider revising test or using integer division.");
-      abort ();
-   }
+   // if (FINDONE_COUNT % parallel_single_test->n_threads != 0) {
+   //    MONGOC_ERROR (
+   //       "FINDONE_COUNT (%d) is not divisible by number of threads: %d",
+   //       FINDONE_COUNT,
+   //       parallel_single_test->n_threads);
+   //    MONGOC_ERROR ("Consider revising test or using integer division.");
+   //    abort ();
+   // }
 
    for (i = 0; i < parallel_single_test->n_threads; i++) {
       parallel_single_test->contexts[i].client = parallel_single_test->clients[i];
-      parallel_single_test->contexts[i].n_findone_to_run =
-         FINDONE_COUNT / parallel_single_test->n_threads;
+      parallel_single_test->contexts[i].n_findone_to_run = FINDONE_COUNT;
    }
 }
 
@@ -502,7 +500,7 @@ parallel_single_perf_new (const char *name, int n_threads)
    int64_t data_size;
 
    parallel_single_test->n_threads = n_threads;
-   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT;
+   data_size = FINDONE_FILTER_SIZE * FINDONE_COUNT * n_threads;
 
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = parallel_single_perf_task;
