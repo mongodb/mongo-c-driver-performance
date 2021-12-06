@@ -138,16 +138,6 @@ parallel_pool_perf_after (perf_test_t *test)
       (parallel_pool_perf_test_t *) test;
    int i;
 
-   if (parallel_pool_test->n_threads > 100) {
-      /* TODO should this check be moved? */
-      MONGOC_ERROR ("Error: trying to start test with %d threads.",
-                    parallel_pool_test->n_threads);
-      MONGOC_ERROR ("Cannot start test with n_threads > 100.");
-      MONGOC_ERROR ("libmongoc uses a default maxPoolSize of 100. Cannot pop "
-                    "more than 100.");
-      MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
-      abort ();
-   }
 
    for (i = 0; i < parallel_pool_test->n_threads; i++) {
       mongoc_client_pool_push (parallel_pool_test->pool,
@@ -220,6 +210,14 @@ parallel_pool_perf_new (const char *name, int n_threads)
 
    parallel_pool_test->n_threads = n_threads;
    data_size = PING_COMMAND_SIZE * OPERATION_COUNT * n_threads;
+
+   if (n_threads > MONGOC_DEFAULT_MAX_POOL_SIZE) {
+      MONGOC_ERROR ("Error: trying to start test with %d threads.", n_threads);
+      MONGOC_ERROR ("Cannot start test with n_threads > %d.", MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("libmongoc uses a default maxPoolSize of %d. Cannot pop more.", MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
+      abort ();
+   }
 
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = parallel_pool_perf_task;
@@ -318,23 +316,7 @@ parallel_single_perf_before (perf_test_t *test)
    }
 }
 
-static void
-parallel_single_perf_after (perf_test_t *test)
-{
-   parallel_single_perf_test_t *parallel_single_test =
-      (parallel_single_perf_test_t *) test;
-   int i;
 
-   if (parallel_single_test->n_threads > 100) {
-      MONGOC_ERROR ("Error: trying to start test with %d threads.",
-                    parallel_single_test->n_threads);
-      MONGOC_ERROR ("Cannot start test with n_threads > 100.");
-      MONGOC_ERROR ("libmongoc uses a default maxPoolSize of 100. Cannot pop "
-                    "more than 100.");
-      MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
-      abort ();
-   }
-}
 
 static void *
 _parallel_single_perf_thread (void *p)
@@ -402,12 +384,20 @@ parallel_single_perf_new (const char *name, int n_threads)
    parallel_single_test->n_threads = n_threads;
    data_size = PING_COMMAND_SIZE * OPERATION_COUNT * n_threads;
 
+   if (n_threads > MONGOC_DEFAULT_MAX_POOL_SIZE) {
+      MONGOC_ERROR ("Error: trying to start test with %d threads.", n_threads);
+      MONGOC_ERROR ("Cannot start test with n_threads > %d.", MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("Test has a hard-coded maximum of %d clients.", MONGOC_DEFAULT_MAX_POOL_SIZE);
+      MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
+      abort ();
+   }
+
    perf_test_init (test, name, NULL /* data path */, data_size);
    test->task = parallel_single_perf_task;
    test->setup = parallel_single_perf_setup;
    test->teardown = parallel_single_perf_teardown;
    test->before = parallel_single_perf_before;
-   test->after = parallel_single_perf_after;
+
    return test;
 }
 
