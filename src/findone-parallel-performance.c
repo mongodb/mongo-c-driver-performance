@@ -54,17 +54,6 @@ typedef struct {
  * popped at one time in a mongoc_client_pool_t */
 #define MONGOC_DEFAULT_MAX_POOL_SIZE 100
 
-typedef struct {
-   pthread_t thread;
-   mongoc_client_t *client;
-   int n_operations_to_run;
-} parallel_single_thread_context_t;
-typedef struct {
-   perf_test_t base;
-   mongoc_client_t *clients[MONGOC_DEFAULT_MAX_POOL_SIZE];
-   int n_threads;
-   parallel_single_thread_context_t *contexts;
-} parallel_single_perf_test_t;
 
 static void
 parallel_pool_perf_setup (perf_test_t *test)
@@ -241,60 +230,20 @@ ping_parallel_perf_new (const char *name, int n_threads)
    return test;
 }
 
-static void *
-_parallel_single_perf_thread (void *p)
-{
-   parallel_single_thread_context_t *ctx =
-      (parallel_single_thread_context_t *) p;
-   int i;
-   bson_t cmd = BSON_INITIALIZER;
+typedef struct {
+   pthread_t thread;
+   mongoc_client_t *client;
+   int n_operations_to_run;
+} parallel_single_thread_context_t;
 
-   bson_append_int32 (&cmd, "ping", 4, 1);
+typedef struct {
+   perf_test_t base;
+   mongoc_client_t *clients[MONGOC_DEFAULT_MAX_POOL_SIZE];
+   int n_threads;
+   parallel_single_thread_context_t *contexts;
+} parallel_single_perf_test_t;
 
-   for (i = 0; i < ctx->n_operations_to_run; i++) {
-      bson_error_t error;
 
-      if (!mongoc_client_command_simple (ctx->client, "db", &cmd, NULL /* read prefs */, NULL /* reply */, &error)) {
-         MONGOC_ERROR ("Error from ping: %s", error.message);
-         abort ();
-      }
-   }
-
-   bson_destroy (&cmd);
-   return NULL;
-}
-
-static void
-parallel_single_perf_task (perf_test_t *test)
-{
-   parallel_single_perf_test_t *parallel_single_test =
-      (parallel_single_perf_test_t *) test;
-   int i;
-   int ret;
-
-   for (i = 0; i < parallel_single_test->n_threads; i++) {
-      parallel_single_thread_context_t *ctx;
-
-      ctx = &parallel_single_test->contexts[i];
-      ret = pthread_create (
-         &ctx->thread, NULL /* attr */, _parallel_single_perf_thread, ctx);
-      if (ret != 0) {
-         MONGOC_ERROR ("Error: pthread_create returned %d", ret);
-         abort ();
-      }
-   }
-
-   for (i = 0; i < parallel_single_test->n_threads; i++) {
-      parallel_single_thread_context_t *ctx;
-
-      ctx = &parallel_single_test->contexts[i];
-      ret = pthread_join (ctx->thread, NULL /* out */);
-      if (ret != 0) {
-         MONGOC_ERROR ("Error: pthread_join returned %d", ret);
-         abort ();
-      }
-   }
-}
 
 static void
 parallel_single_perf_setup (perf_test_t *test)
@@ -384,6 +333,61 @@ parallel_single_perf_after (perf_test_t *test)
                     "more than 100.");
       MONGOC_ERROR ("Consider revising this test to use a larger pool size.");
       abort ();
+   }
+}
+
+static void *
+_parallel_single_perf_thread (void *p)
+{
+   parallel_single_thread_context_t *ctx =
+      (parallel_single_thread_context_t *) p;
+   int i;
+   bson_t cmd = BSON_INITIALIZER;
+
+   bson_append_int32 (&cmd, "ping", 4, 1);
+
+   for (i = 0; i < ctx->n_operations_to_run; i++) {
+      bson_error_t error;
+
+      if (!mongoc_client_command_simple (ctx->client, "db", &cmd, NULL /* read prefs */, NULL /* reply */, &error)) {
+         MONGOC_ERROR ("Error from ping: %s", error.message);
+         abort ();
+      }
+   }
+
+   bson_destroy (&cmd);
+   return NULL;
+}
+
+static void
+parallel_single_perf_task (perf_test_t *test)
+{
+   parallel_single_perf_test_t *parallel_single_test =
+      (parallel_single_perf_test_t *) test;
+   int i;
+   int ret;
+
+   for (i = 0; i < parallel_single_test->n_threads; i++) {
+      parallel_single_thread_context_t *ctx;
+
+      ctx = &parallel_single_test->contexts[i];
+      ret = pthread_create (
+         &ctx->thread, NULL /* attr */, _parallel_single_perf_thread, ctx);
+      if (ret != 0) {
+         MONGOC_ERROR ("Error: pthread_create returned %d", ret);
+         abort ();
+      }
+   }
+
+   for (i = 0; i < parallel_single_test->n_threads; i++) {
+      parallel_single_thread_context_t *ctx;
+
+      ctx = &parallel_single_test->contexts[i];
+      ret = pthread_join (ctx->thread, NULL /* out */);
+      if (ret != 0) {
+         MONGOC_ERROR ("Error: pthread_join returned %d", ret);
+         abort ();
+      }
    }
 }
 
