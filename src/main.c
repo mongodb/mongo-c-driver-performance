@@ -39,11 +39,11 @@ main (int argc, char **argv)
    open_output ();
    print_header ();
 
-   // bson_perf ();
-   // driver_perf ();
-   // gridfs_perf ();
-   // parallel_perf ();
-   // gridfs_parallel_perf ();
+   bson_perf ();
+   driver_perf ();
+   gridfs_perf ();
+   parallel_perf ();
+   gridfs_parallel_perf ();
    parallel_client_perf ();
 
    print_footer ();
