@@ -399,7 +399,7 @@ parallel_single_perf_new (const char *name, int n_threads)
 }
 
 void
-findone_parallel_perf (void)
+parallel_client_perf (void)
 {
    perf_test_t *perf_tests[] = {
       parallel_pool_perf_new ("Parallel/Pool/Threads:1", 1),

@@ -27,7 +27,7 @@ parallel_perf (void);
 extern void
 gridfs_parallel_perf (void);
 extern void
-findone_parallel_perf (void);
+parallel_client_perf (void);
 
 int
 main (int argc, char **argv)
@@ -44,7 +44,7 @@ main (int argc, char **argv)
    // gridfs_perf ();
    // parallel_perf ();
    // gridfs_parallel_perf ();
-   findone_parallel_perf ();
+   parallel_client_perf ();
 
    print_footer ();
    close_output ();
