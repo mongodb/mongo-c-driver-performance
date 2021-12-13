@@ -369,7 +369,7 @@ run_perf_tests (perf_test_t **tests)
    while (tests[test_idx]) {
       test = tests[test_idx];
       if (should_run_test (test->name)) {
-         printf ("%20s", test->name);
+         printf ("%20s\n", test->name);
          fflush (stdout);
          test->setup (test);
 
@@ -391,6 +391,8 @@ run_perf_tests (perf_test_t **tests)
 
             test->after (test);
          }
+
+         printf ("Ran %zu iterations of %s\n", i, test->name);
 
          qsort ((void *) results, i, sizeof (int64_t), cmp);
          median_idx = BSON_MIN (BSON_MAX (0, (int) i / 2), (int) i - 1);
