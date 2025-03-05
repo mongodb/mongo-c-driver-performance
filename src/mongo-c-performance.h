@@ -17,8 +17,8 @@
 #ifndef MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 #define MONGO_C_PERFORMANCE_MONGO_C_PERFORMANCE_H
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 #include <stddef.h>
 #include <assert.h>

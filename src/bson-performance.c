@@ -16,8 +16,8 @@
 
 #include "mongo-c-performance.h"
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 typedef struct {
    perf_test_t base;

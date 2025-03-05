@@ -17,8 +17,8 @@
 #include "mongo-c-performance.h"
 
 #include <stdio.h>
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 #include <dirent.h>
 #include <pthread.h>
 
@@ -556,7 +556,9 @@ void
 parallel_perf (void)
 {
    perf_test_t *tests[] = {
-      import_perf_new (), export_perf_new (), NULL,
+      import_perf_new (),
+      export_perf_new (),
+      NULL,
    };
 
    run_perf_tests (tests);

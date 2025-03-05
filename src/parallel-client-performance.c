@@ -22,8 +22,8 @@
 
 #include "mongo-c-performance.h"
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 #include <pthread.h>
 
