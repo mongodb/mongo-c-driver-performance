@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 #include <dirent.h>
 
 #include "mongo-c-performance.h"
@@ -297,8 +297,7 @@ close_output (void)
 void
 print_header (void)
 {
-   fprintf (output,
-            "[\n");
+   fprintf (output, "[\n");
 
    is_first_test = true;
 }

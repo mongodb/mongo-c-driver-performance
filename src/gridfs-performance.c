@@ -17,8 +17,8 @@
 #include "mongo-c-performance.h"
 
 #include <stdio.h>
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 
 /*
@@ -292,7 +292,9 @@ void
 gridfs_perf (void)
 {
    perf_test_t *tests[] = {
-      upload_perf_new (), download_perf_new (), NULL,
+      upload_perf_new (),
+      download_perf_new (),
+      NULL,
    };
 
    run_perf_tests (tests);
