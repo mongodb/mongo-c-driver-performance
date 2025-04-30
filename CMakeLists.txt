@@ -1,12 +1,11 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.15)
 project(mongo-c-performance)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake/")
 
 find_package (Threads)
 
-set(LIBMONGOC_REQUIRED_VERSION 1.9.2)
-find_package(mongoc-1.0 ${LIBMONGOC_REQUIRED_VERSION} REQUIRED)
+find_package(mongoc 2.0 REQUIRED)
 
 include_directories(
     ${MONGOC_INCLUDE_DIRS}
@@ -29,6 +28,6 @@ set(SOURCE_FILES
 add_executable(mongo-c-performance ${SOURCE_FILES})
 target_link_libraries(
         mongo-c-performance
-        mongo::mongoc_shared
+        mongoc::shared
         ${CMAKE_THREAD_LIBS_INIT}
 )
