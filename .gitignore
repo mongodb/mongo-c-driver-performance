@@ -17,3 +17,4 @@ cmake_install.cmake
 Makefile
 mongo-c-performance.cbp
 cmake-build-*
+cmake-build
