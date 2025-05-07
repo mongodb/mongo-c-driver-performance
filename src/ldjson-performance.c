@@ -441,7 +441,7 @@ _export_thread (void *p)
 #endif
    total_sz = 0;
    while (mongoc_cursor_next (cursor, &doc)) {
-      json = bson_as_json (doc, &sz);
+      json = bson_as_legacy_extended_json (doc, &sz);
       if (fwrite (json, sizeof (char), sz, fp) < sz) {
          perror ("fwrite");
          abort ();
